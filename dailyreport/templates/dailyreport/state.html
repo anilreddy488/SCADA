@@ -1,0 +1,32 @@
+<h2>States</h2>
+<form method="POST">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Save</button>
+</form>
+
+<!-- Add the table below the form -->
+<table>
+  <thead>
+    <tr>
+      <th>State Name</th>
+      <th>Region</th>
+      <th>StateID</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for state in states %}
+      <tr>
+        <td>{{ state.StateName }}</td>
+        <td>{{ state.Region }}</td>
+        <td>{{ state.StateID }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- Add the logout button -->
+<form action="{% url 'user_logout' %}" method="POST">
+  {% csrf_token %}
+  <button type="submit">Logout</button>
+</form>

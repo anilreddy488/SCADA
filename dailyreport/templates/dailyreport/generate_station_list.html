@@ -1,0 +1,28 @@
+<h2>Generating Stations</h2>
+
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Save</button>
+</form>
+
+<table>
+  <thead>
+    <tr>
+      <th>GenStationName</th>
+      <th>GenType</th>
+      <th>InstalledCap</th>
+      <th>GenStationID</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for station in generating_stations %}
+    <tr>
+      <td>{{ station.GenStationName }}</td>
+      <td>{{ station.GenType }}</td>
+      <td>{{ station.InstalledCap }}</td>
+      <td>{{ station.GenStationID }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

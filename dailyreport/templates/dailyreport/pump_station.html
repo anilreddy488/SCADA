@@ -1,0 +1,32 @@
+<h2>Pumping Stations</h2>
+
+<form method="POST">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Save</button>
+</form>
+
+<table>
+  <thead>
+    <tr>
+      <th>PumpStationID</th>
+      <th>PumpStationName</th>
+      <th>InstalledCap</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for station in stations %}
+    <tr>
+      <td>{{ station.PumpStationID }}</td>
+      <td>{{ station.PumpStationName }}</td>
+      <td>{{ station.InstalledCap }}</td>
+      <td><a href="{% url 'update_pump_station' pk=station.pk %}">Update</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<!-- Add the logout button -->
+<form action="{% url 'user_logout' %}" method="POST">
+  {% csrf_token %}
+  <button type="submit">Logout</button>
+</form>

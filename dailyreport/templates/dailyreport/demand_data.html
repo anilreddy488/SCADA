@@ -1,0 +1,34 @@
+<form method="POST">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Save</button>
+</form>
+<!-- Add the table below the form -->
+<table>
+  <thead>
+    <tr>
+      <th>Generating Station ID</th>
+      <th>Morning Peak</th>
+      <th>Evening Peak</th>
+      <th>EnergyMU</th>
+      <th>Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for x in data %}
+      <tr>
+        <td>{{ x.GenStationID }}</td>
+        <td>{{ x.MorningPeak }}</td>
+        <td>{{ x.EveningPeak }}</td>
+        <td>{{ x.Energy }}</td>
+        <td>{{ x.Date }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- Add the logout button -->
+<form action="{% url 'user_logout' %}" method="POST">
+  {% csrf_token %}
+  <button type="submit">Logout</button>
+</form>

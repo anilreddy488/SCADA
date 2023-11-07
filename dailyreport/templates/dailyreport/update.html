@@ -1,0 +1,11 @@
+<form method="POST">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Update</button>
+</form>
+
+<!-- Add the logout button -->
+<form action="{% url 'user_logout' %}" method="POST">
+  {% csrf_token %}
+  <button type="submit">Logout</button>
+</form>

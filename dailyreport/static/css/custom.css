@@ -1,0 +1,5 @@
+body {
+    background-image: url("{% static 'C:\Users\ae2scada.TSSLDC\SCADA\dailyreport\static\homebackground.jpg' %}");
+    background-size: cover;
+    background-repeat: no-repeat;
+}
