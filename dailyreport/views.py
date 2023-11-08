@@ -179,11 +179,6 @@ def import_data_from_excel(file_path):
     except Exception as e:
         return False, str(e)  # Error message
 
-
-
-
-
-
 def upload_excel(request):
     if request.method == 'POST':
         form = ExcelUploadForm(request.POST, request.FILES)
@@ -200,10 +195,6 @@ def upload_excel(request):
     return render(request, 'dailyreport/upload_excel.html', {'form': form})
 
 
-
-
-
-
 def user_logout(request):
     logout(request)
     return redirect('login')
@@ -213,67 +204,6 @@ def user_logout(request):
 def home(request):
     return render(request, 'dailyreport/home.html')
 
-
-@login_required(login_url='login')
-def grid_frequency(request):
-    form = GridFreqForm()
-    if request.method == 'POST':
-        form = GridFreqForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('generate_station')
-    freq = GridFreq.objects.all()  # Retrieve all generating stations
-    context = {'form': form, 'freq': freq}  # Include stations in the context
-    return render(request, 'dailyreport/generate_station.html', context)
-
-
-
-@login_required(login_url='login')
-def demand_data(request):
-    form = DemandDataForm()
-    if request.method == 'POST':
-        form = DemandDataForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('demand_data')
-    data = DemandData.objects.all()
-    context = {'form': form,'data':data}
-    return render(request, 'dailyreport/demand_data.html', context)
-
-@login_required(login_url='login')
-def pump_load_data(request):
-    form = PumpLoadDataForm()
-    if request.method == 'POST':
-        form = PumpLoadDataForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('pump_load_data')
-    data = PumpLoadData.objects.all()
-    context = {'form': form,'data':data}
-    return render(request, 'dailyreport/pump_load_data.html', context)
-
-@login_required(login_url='login')
-def state(request):
-    form = StateForm()
-    if request.method == 'POST':
-        form = StateForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('state')
-    states = State.objects.all()  # Retrieve all generating stations
-    context = {'form': form, 'states': states}  # Include stations in the context
-    return render(request, 'dailyreport/state.html', context)
-
-@login_required(login_url='login')
-def schdrwl_data(request):
-    form = SchDrwlDataForm()
-    if request.method == 'POST':
-        form = SchDrwlDataForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('schdrwl_data')
-    context = {'form': form}
-    return render(request, 'dailyreport/schdrwldata.html', context)
 
 @login_required(login_url='login')
 def export_to_text(request):
