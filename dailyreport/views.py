@@ -213,29 +213,6 @@ def user_logout(request):
 def home(request):
     return render(request, 'dailyreport/home.html')
 
-@login_required(login_url='login')
-def generate_station(request):
-    form = GeneratingStationForm()
-    if request.method == 'POST':
-        form = GeneratingStationForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('generate_station')
-    stations = GeneratingStation.objects.all()  # Retrieve all generating stations
-    context = {'form': form, 'stations': stations}  # Include stations in the context
-    return render(request, 'dailyreport/generate_station.html', context)
-
-@login_required(login_url='login')
-def update_generating_station(request, pk):
-    station = GeneratingStation.objects.get(pk=pk)
-    form = GeneratingStationForm(instance=station)
-    if request.method == 'POST':
-        form = GeneratingStationForm(request.POST, instance=station)
-        if form.is_valid():
-            form.save()
-            return redirect('generate_station')
-    context = {'form': form}
-    return render(request, 'dailyreport/update.html', context)
 
 @login_required(login_url='login')
 def grid_frequency(request):
@@ -250,31 +227,6 @@ def grid_frequency(request):
     return render(request, 'dailyreport/generate_station.html', context)
 
 
-@login_required(login_url='login')
-def pump_station(request):
-    form = PumpStationForm()
-    if request.method == 'POST':
-        form = PumpStationForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('pump_station')
-    stations = PumpStation.objects.all()
-    context = {'form': form, 'stations': stations}
-    return render(request, 'dailyreport/pump_station.html', context)
-
-
-@login_required(login_url='login')
-def update_pump_station(request, pk):
-    station = PumpStation.objects.get(pk=pk)
-    form = PumpStationForm(instance=station)
-    if request.method == 'POST':
-        form = PumpStationForm(request.POST, instance=station)
-        if form.is_valid():
-            form.save()
-            return redirect('pump_station')
-    context = {'form': form}
-    return render(request, 'dailyreport/update.html', context)
-
 
 @login_required(login_url='login')
 def demand_data(request):
@@ -288,17 +240,17 @@ def demand_data(request):
     context = {'form': form,'data':data}
     return render(request, 'dailyreport/demand_data.html', context)
 
-@login_required(login_url='login')
-def pump_load_data(request):
-    form = PumpLoadDataForm()
-    if request.method == 'POST':
-        form = PumpLoadDataForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('pump_load_data')
-    data = PumpLoadData.objects.all()
-    context = {'form': form,'data':data}
-    return render(request, 'dailyreport/pump_load_data.html', context)
+#@login_required(login_url='login')
+#def pump_load_data(request):
+#    form = PumpLoadDataForm()
+#    if request.method == 'POST':
+#        form = PumpLoadDataForm(request.POST)
+#        if form.is_valid():
+#            form.save()
+#            return redirect('pump_load_data')
+#    data = PumpLoadData.objects.all()
+#    context = {'form': form,'data':data}
+#    return render(request, 'dailyreport/pump_load_data.html', context)
 
 @login_required(login_url='login')
 def state(request):
