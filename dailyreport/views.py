@@ -240,17 +240,17 @@ def demand_data(request):
     context = {'form': form,'data':data}
     return render(request, 'dailyreport/demand_data.html', context)
 
-#@login_required(login_url='login')
-#def pump_load_data(request):
-#    form = PumpLoadDataForm()
-#    if request.method == 'POST':
-#        form = PumpLoadDataForm(request.POST)
-#        if form.is_valid():
-#            form.save()
-#            return redirect('pump_load_data')
-#    data = PumpLoadData.objects.all()
-#    context = {'form': form,'data':data}
-#    return render(request, 'dailyreport/pump_load_data.html', context)
+@login_required(login_url='login')
+def pump_load_data(request):
+    form = PumpLoadDataForm()
+    if request.method == 'POST':
+        form = PumpLoadDataForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('pump_load_data')
+    data = PumpLoadData.objects.all()
+    context = {'form': form,'data':data}
+    return render(request, 'dailyreport/pump_load_data.html', context)
 
 @login_required(login_url='login')
 def state(request):
