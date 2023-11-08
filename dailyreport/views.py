@@ -532,49 +532,6 @@ def export_to_text(request):
         maxcitysolardata = monthmaxcitysolardata[monthmaxcitysolardata['Date']==yesterday]
 
 
-        def monthlyenergyreport(df_allgen,type):
-            df_filtered=df_allgen[df_allgen['GenType'].isin(type)]
-            df_report=pd.DataFrame(index=df_filtered['GenStationName'].unique(),columns=['InstalledCap']+[f'{cur_year}-{cur_month}-{x:02}' for x in range(1,yesterday.day+1)])
-            for date in df_report.columns:
-                for gen in df_report.index:
-                    try:
-                        if date=='InstalledCap':
-                            df_report.loc[gen,date]=df_filtered[(df_filtered['GenStationName']==gen)&(df_filtered['Date']==yesterday_str)].iloc[0]['InstalledCap']
-                            
-                        else:
-                            df_report.loc[gen,date]=df_filtered[(df_filtered['Date']==date) & (df_filtered['GenStationName']==gen)].iloc[0]['Energy']
-
-                    except IndexError:
-                        pass
-            df_report['CUM']=df_report.drop('InstalledCap',axis=1).sum(axis=1,skipna=True)
-            df_report['AVG']=df_report.drop(['InstalledCap','CUM'],axis=1).mean(axis=1,skipna=True)
-            return df_report
-        report_hydel=monthlyenergyreport(monthgendata,['Hydel'])
-        report_thermal=monthlyenergyreport(monthgendata,['Thermal'])
-        report_genco=pd.concat([report_hydel,report_thermal],axis=0).reset_index()
-        report_thermal['CapUtil']=report_thermal['CUM']*100000/report_thermal['InstalledCap']/24/yesterday.day
-        report_lta=monthlyenergyreport(monthgendata,['LTA'])
-        report_solar=monthlyenergyreport(monthgendata,['Private_solar'])
-        report_nonconventional=monthlyenergyreport(monthgendata,['Private_Nonconventional'])
-        report_statepurchases=monthlyenergyreport(monthgendata,['State Purchases','Third Party Purchases','Third Party Sales','Pump'])
-
-        monthdata_private=monthgendata[monthgendata["GenType"].str.contains("Private") & ~(monthgendata["GenType"].isin(['Private_solar','Private_Nonconventional']))]
-        report_private = pd.DataFrame(index=monthdata_private['GenStationName'].unique(),columns=['InstalledCap']+[f'{cur_year}-{cur_month}-{x:02}' for x in range(1,yesterday.day+1)])
-        for date in report_private.columns:
-            for gen in report_private.index:
-                try:
-                    if date=='InstalledCap':
-                        report_private.loc[gen,date]=monthdata_private[(monthdata_private['GenStationName']==gen)&(monthdata_private['Date']==yesterday_str)].iloc[0]['InstalledCap']
-                    else:
-                        report_private.loc[gen,date]=monthdata_private[(monthdata_private['Date']==date) & (monthdata_private['GenStationName']==gen)].iloc[0]['Energy']
-                except IndexError:
-                    pass
-
-        report_private['CUM']=report_private.drop(['InstalledCap'],axis=1).sum(axis=1,skipna=True)
-        report_private['AVG']=report_private.drop(['InstalledCap','CUM'],axis=1).mean(axis=1,skipna=True)
-        report_totalprivate=pd.concat([report_solar,report_nonconventional,report_private],axis=0)
-
-       
 
         centralgendata_cum=centralgendata[['CentralStationID','Energy']].groupby(['CentralStationID']).sum()
         centralgendata_cum.rename({'Energy':'MonthCumulative'},inplace=True,axis=1)
@@ -698,7 +655,7 @@ III TSSHARE OF APISGS->{APISGS.iloc[0,2]:>6.0f}{APISGS.iloc[0,3]:>12.0f}{APISGS.
 
 
                     TRANSMISSION CORPORATION OF TELANGANA LTD
-                  GRID OPERATION -- FINAL REPORT FOR {today.strftime('%d/%m/%Y')}
+                  GRID OPERATION -- FINAL REPORT FOR {yesterday.strftime('%d/%m/%Y')}
 ==================================================================================
                              Generation at Peak Demand in MW     Generation In MU  
 Sl Generating                    Morning     Evening          {yesterday.strftime('%A')}{' '*(10-len(yesterday.strftime('%A')))} | {previous_year_day.strftime('%A')}
