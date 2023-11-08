@@ -279,7 +279,7 @@ def schdrwl_data(request):
 def export_to_text(request):
     response = HttpResponse(content_type='text/plain')
     response['Content-Disposition'] = 'attachment; filename="custom_report.txt"'
-    today = datetime.date.today()
+    today = datetime.datetime.strptime(request.GET['date'], '%Y-%m-%d').date()
     yesterday = today - relativedelta(days=1)
     yesterday_str = f'{yesterday.year}-{yesterday.month}-{yesterday.day:02}'
     daybeforeyesterday = today - relativedelta(days=2)
@@ -972,15 +972,142 @@ XII LOAD FACTOR       {'':<6}{'':>12}{'':>12}{load_factor:>16.3f}%    |{gen_data
       report_content += row_content
 
 
+    response.write(report_content)
 
+    return response
 
+def export_dailymu_to_text(request):
+    response = HttpResponse(content_type='text/plain')
+    response['Content-Disposition'] = 'attachment; filename="custom_report.txt"'
 
+    today = datetime.date.today()
+    yesterday = today - relativedelta(days=1)
+    yesterday_str = f'{yesterday.year}-{yesterday.month}-{yesterday.day:02}'
+    daybeforeyesterday = today - relativedelta(days=2)
+    cur_month = yesterday.month
+    cur_year = yesterday.year
+    cur_yearmonth = f'{cur_year}-{cur_month:02}'
 
-    row_content = f"""
+    monthstartday = f'{cur_year}-{cur_month}-01'
+    fin_year_startday = f'{cur_year-1}-04-01'
+
+    previous_year_day = yesterday - relativedelta(years=1)
     
-    
-    
-    TS TRANSCO GENERATION DAYWISE DATA IN MILLION UNITS FROM   {monthstartday[-2:]}/{monthstartday[-5:-3]}/{monthstartday[:4]}  TO  {yesterday.strftime('%d/%m/%Y')}
+
+
+
+    query_monthdataTSDemand = """
+               SELECT MorningPeak, EveningPeak, Energy, Date
+               FROM dailyreport_DemandData
+               WHERE Date BETWEEN %(monthstartday)s AND %(yesterday)s AND GenStationID=36
+               """
+
+
+    query_TsdemandMonthCum = """
+               SELECT SUM(Energy) 
+               FROM dailyreport_DemandData
+               WHERE Date BETWEEN %(monthstartday)s AND %(yesterday)s AND GenStationID=36
+               """
+
+
+    query_month_gendata = f"""WITH month_data AS
+               (SELECT GenStationID, GenStationName, GenType, InstalledCap, Energy, STRFTIME('%%Y-%%m', Date) AS month, Date
+               FROM dailyreport_DemandData)
+               
+               SELECT GenStationID, GenStationName, GenType, InstalledCap, Energy, Date
+               FROM month_data
+               WHERE month='{cur_year}-{cur_month}'
+               """
+
+    query_month_maxcitysolar = f"""
+               WITH month_data AS
+               (SELECT PID, Name, MaxDemand, Time, STRFTIME('%%Y-%%m', Date) AS month, Date
+               FROM dailyreport_MaxCitySolar)
+               
+               SELECT PID, Name, MaxDemand, Time, Date
+               FROM month_data
+               WHERE month='{cur_year}-{cur_month}'
+               """
+                
+    with connection.cursor() as cursor:
+
+
+        cursor.execute(query_monthdataTSDemand, {'yesterday': yesterday, 'monthstartday': monthstartday})
+        tsdemand_monthdata = cursor.fetchall()
+
+        cursor.execute(query_TsdemandMonthCum, {'yesterday': yesterday, 'monthstartday': monthstartday})
+        tsdemand_monthcum = cursor.fetchall()
+        
+
+
+
+        cursor.execute(query_month_gendata,{'cur_year':cur_year,'cur_month':cur_month})
+        monthgendata = cursor.fetchall()
+
+        cursor.execute(query_month_maxcitysolar,{'cur_year':cur_year,'cur_month':cur_month})
+        monthmaxcitysolardata = cursor.fetchall()
+
+        cursor.close()
+
+
+
+        tsdemand_monthdata=pd.DataFrame(tsdemand_monthdata,columns=['MorningPeak', 'EveningPeak', 'Energy', 'Date'])
+        tsdemand_monthdata['MaxTSDemand']=tsdemand_monthdata[['MorningPeak', 'EveningPeak']].max(axis=1)
+
+
+        monthgendata = pd.DataFrame(monthgendata,columns=['GenStationID', 'GenStationName', 'GenType', 'InstalledCap', 'Energy', 'Date'])
+
+        monthmaxcitysolardata = pd.DataFrame(monthmaxcitysolardata,columns=['PID','Name','MaxDemand','Time','Date'])
+        maxcitysolardata = monthmaxcitysolardata[monthmaxcitysolardata['Date']==yesterday]
+
+
+        def monthlyenergyreport(df_allgen,type):
+            df_filtered=df_allgen[df_allgen['GenType'].isin(type)]
+            df_report=pd.DataFrame(index=df_filtered['GenStationName'].unique(),columns=['InstalledCap']+[f'{cur_year}-{cur_month}-{x:02}' for x in range(1,yesterday.day+1)])
+            for date in df_report.columns:
+                for gen in df_report.index:
+                    try:
+                        if date=='InstalledCap':
+                            df_report.loc[gen,date]=df_filtered[(df_filtered['GenStationName']==gen)&(df_filtered['Date']==yesterday_str)].iloc[0]['InstalledCap']
+                            
+                        else:
+                            df_report.loc[gen,date]=df_filtered[(df_filtered['Date']==date) & (df_filtered['GenStationName']==gen)].iloc[0]['Energy']
+
+                    except IndexError:
+                        pass
+            df_report['CUM']=df_report.drop('InstalledCap',axis=1).sum(axis=1,skipna=True)
+            df_report['AVG']=df_report.drop(['InstalledCap','CUM'],axis=1).mean(axis=1,skipna=True)
+            return df_report
+        report_hydel=monthlyenergyreport(monthgendata,['Hydel'])
+        report_thermal=monthlyenergyreport(monthgendata,['Thermal'])
+        report_genco=pd.concat([report_hydel,report_thermal],axis=0).reset_index()
+        report_thermal['CapUtil']=report_thermal['CUM']*100000/report_thermal['InstalledCap']/24/yesterday.day
+        report_lta=monthlyenergyreport(monthgendata,['LTA'])
+        report_solar=monthlyenergyreport(monthgendata,['Private_solar'])
+        report_nonconventional=monthlyenergyreport(monthgendata,['Private_Nonconventional'])
+        report_statepurchases=monthlyenergyreport(monthgendata,['State Purchases','Third Party Purchases','Third Party Sales','Pump'])
+
+        monthdata_private=monthgendata[monthgendata["GenType"].str.contains("Private") & ~(monthgendata["GenType"].isin(['Private_solar','Private_Nonconventional']))]
+        report_private = pd.DataFrame(index=monthdata_private['GenStationName'].unique(),columns=['InstalledCap']+[f'{cur_year}-{cur_month}-{x:02}' for x in range(1,yesterday.day+1)])
+        for date in report_private.columns:
+            for gen in report_private.index:
+                try:
+                    if date=='InstalledCap':
+                        report_private.loc[gen,date]=monthdata_private[(monthdata_private['GenStationName']==gen)&(monthdata_private['Date']==yesterday_str)].iloc[0]['InstalledCap']
+                    else:
+                        report_private.loc[gen,date]=monthdata_private[(monthdata_private['Date']==date) & (monthdata_private['GenStationName']==gen)].iloc[0]['Energy']
+                except IndexError:
+                    pass
+
+        report_private['CUM']=report_private.drop(['InstalledCap'],axis=1).sum(axis=1,skipna=True)
+        report_private['AVG']=report_private.drop(['InstalledCap','CUM'],axis=1).mean(axis=1,skipna=True)
+        report_totalprivate=pd.concat([report_solar,report_nonconventional,report_private],axis=0)
+
+
+
+
+    report_content = ' '
+    row_content = f"""TS TRANSCO GENERATION DAYWISE DATA IN MILLION UNITS FROM   {monthstartday[-2:]}/{monthstartday[-5:-3]}/{monthstartday[:4]}  TO  {yesterday.strftime('%d/%m/%Y')}
 """
     report_content += row_content
     
