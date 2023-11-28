@@ -1,10 +1,29 @@
+{% load bootstrap5 %}
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Upload Success</title>
+    <title>Welcome to TSSLDC</title>
+    {% bootstrap_css %}
 </head>
 <body>
-    <h2>Upload Successful</h2>
+    <div class="container">
+        <h1>Welcome to TSSLDC</h1>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-info">
+            <div class="container-fluid d-flex justify-content-between"> <!-- Use d-flex and justify-content-between -->
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'user_logout' %}">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </div>
     <p>The data from the Excel file has been imported successfully.</p>
 </body>
 </html>
