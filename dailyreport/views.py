@@ -206,6 +206,411 @@ def home(request):
 
 
 @login_required(login_url='login')
+def export_to_text_fir(request):
+    response = HttpResponse(content_type='text/plain')
+    response['Content-Disposition'] = 'attachment; filename="custom_report.txt"'
+    today = datetime.datetime.strptime(request.GET['date'], '%Y-%m-%d').date()
+    yesterday = today - relativedelta(days=1)
+    yesterday_str = f'{yesterday.year}-{yesterday.month}-{yesterday.day:02}'
+    daybeforeyesterday = today - relativedelta(days=2)
+    cur_month = yesterday.month
+    cur_year = yesterday.year
+    cur_yearmonth = f'{cur_year}-{cur_month:02}'
+
+    monthstartday = f'{cur_year}-{cur_month}-01'
+    fin_year_startday = f'{cur_year-1}-04-01'
+
+    previous_year_day = yesterday - relativedelta(years=1)
+    
+
+    query_Gen = """WITH present_data AS
+               (SELECT GenStationID, GenStationName, GenType, InstalledCap, MorningPeak, EveningPeak, Energy 
+               FROM dailyreport_DemandData
+               WHERE Date=%(yesterday)s),
+               last_year_data AS
+               (SELECT GenStationID, Energy 
+               FROM dailyreport_DemandData
+               WHERE Date=%(previous_year_day)s)
+               SELECT GenStationName, GenType, InstalledCap, p.MorningPeak, p.EveningPeak, p.Energy ,l.Energy, p.GenStationID
+               FROM present_data AS p 
+               LEFT OUTER JOIN last_year_data AS l
+               ON p.GenStationID=l.GenStationID
+               """
+
+    query_PrevTSDemand = """
+               SELECT MAX(MorningPeak, EveningPeak) 
+               FROM dailyreport_DemandData
+               WHERE Date=%(previous_year_day)s AND GenStationID=36
+               """
+
+
+
+
+
+    query_gridfreq = """SELECT FreqMorning,FreqEvening,TimeMaxDemandMorning,TimeMaxDemandEvening
+               FROM dailyreport_GridFreq
+               WHERE Date=%(yesterday)s"""
+
+
+
+    query_weatherandotherparameters = """
+               SELECT WID, Name, Type, Value, Date 
+               FROM dailyreport_WeatherandOtherParameters
+               WHERE Date=%(yesterday)s
+               """
+
+    query_coalparticulars = """
+               SELECT GenStationID, GenStationName, OpenBal, Receipts, Consumption, AvgCoalperDay, Date 
+               FROM dailyreport_CoalParticulars
+               WHERE Date=%(yesterday)s
+               """
+
+    query_wagonparticulars = """
+               SELECT GenStationID, GenStationName, OpenBal, Receipts, Tippled, Pending, Date 
+               FROM dailyreport_WagonParticulars
+               WHERE Date=%(yesterday)s
+               """
+
+    query_month_gendata = f"""WITH month_data AS
+               (SELECT GenStationID, GenStationName, GenType, InstalledCap, Energy, STRFTIME('%%Y-%%m', Date) AS month, Date
+               FROM dailyreport_DemandData)
+               
+               SELECT GenStationID, GenStationName, GenType, InstalledCap, Energy, Date
+               FROM month_data
+               WHERE month='{cur_year}-{cur_month}'
+               """
+
+    query_maxcitysolar = f"""
+               SELECT PID, Name, MaxDemand, Time, Date
+               FROM dailyreport_maxcitysolar
+               WHERE Date='{yesterday}'
+               """
+
+                
+    with connection.cursor() as cursor:
+        cursor.execute(query_Gen, {'yesterday': yesterday, 'previous_year_day': previous_year_day})
+        gen_data = cursor.fetchall()
+
+        cursor.execute(query_PrevTSDemand, {'previous_year_day': previous_year_day})
+        PrevTSDemand = cursor.fetchall()
+
+
+
+
+        cursor.execute(query_gridfreq, {'yesterday': yesterday})
+        gridfreq_data = cursor.fetchall()
+
+        cursor.execute(query_weatherandotherparameters,{'yesterday': yesterday})
+        weatherandotherdata = cursor.fetchall()
+
+        cursor.execute(query_coalparticulars,{'yesterday': yesterday})
+        coaldata = cursor.fetchall()
+
+        cursor.execute(query_wagonparticulars,{'yesterday': yesterday})
+        wagondata = cursor.fetchall()
+
+        cursor.execute(query_maxcitysolar,{'yesterday': yesterday})
+        maxcitysolardata = cursor.fetchall()
+
+        cursor.close()
+
+        gen_data=pd.DataFrame(gen_data,columns=['GenStationName', 'GenType', 'InstalledCap', 'MorningPeak', 'EveningPeak', 'Energy' ,'PrevEnergy','GenStationID'])
+
+        gridfreq_data=pd.DataFrame(gridfreq_data,columns=['FreqMorning','FreqEvening','TimeMaxDemandMorning','TimeMaxDemandEvening'])
+
+        weatherandotherdata = pd.DataFrame(weatherandotherdata,columns=['WID', 'Name', 'Type', 'Value', 'Date'])
+        weatherdata=weatherandotherdata[weatherandotherdata['Type']=='Weather']
+        otherdata=weatherandotherdata[weatherandotherdata['Type']=='River']
+
+        coaldata = pd.DataFrame(coaldata,columns=['GenStationID', 'GenStationName', 'OpenBal', 'Receipts', 'Consumption', 'AvgCoalperDay', 'Date'])
+        coaldata['Balance'] = coaldata['OpenBal']+coaldata['Receipts']-coaldata['Consumption']
+
+        wagondata = pd.DataFrame(wagondata,columns=['GenStationID', 'GenStationName', 'OpenBal', 'Receipts', 'Tippled', 'Pending', 'Date'])
+
+        maxcitysolardata = pd.DataFrame(maxcitysolardata,columns=['PID', 'Name', 'MaxDemand', 'Time','Date'])
+
+
+
+        thermal=gen_data[gen_data["GenType"] == 'Thermal']
+
+        hydel=gen_data[gen_data["GenType"] == 'Hydel']
+
+        genco=pd.concat([thermal,hydel],axis=0)
+
+        genco_total=genco.sum()
+
+        central_sector=gen_data[gen_data["GenType"] == 'Central Sector']
+
+        lta=gen_data[gen_data["GenType"] == 'LTA']
+        
+        APISGS=gen_data[gen_data["GenType"] == 'APISGS']
+
+        solar=gen_data[gen_data["GenType"] == 'Private_solar']
+
+        wind=gen_data[gen_data["GenType"] == 'Private_wind']
+
+        nonconventional=gen_data[gen_data["GenType"] == 'Private_Nonconventional']
+
+        private=gen_data[gen_data["GenType"] == 'Private']
+
+        private_total=pd.concat([private,wind,solar,nonconventional],axis=0)
+
+        state_purchases=gen_data[gen_data["GenType"] == 'State Purchases']
+
+        third_party_purchase=gen_data[gen_data["GenType"] == 'Third Party Purchases']
+
+        third_party_sales=gen_data[gen_data["GenType"] == 'Third Party Sales']
+
+        gen_total=pd.concat([genco,central_sector,lta,APISGS,private_total,state_purchases,third_party_purchase,third_party_sales],axis=0)
+        gen_total=gen_total[['InstalledCap','MorningPeak','EveningPeak','Energy','PrevEnergy']].sum()
+
+        pump=gen_data[gen_data["GenType"] == 'Pump']
+
+        pump_total=pump[['InstalledCap','MorningPeak','EveningPeak','Energy','PrevEnergy']].sum()
+
+        gen_total_wo_pump=gen_total.add(pump_total)
+
+        load_factor=(gen_total_wo_pump["Energy"]*1000*100/24/max(gen_total_wo_pump["MorningPeak"],gen_total_wo_pump["MorningPeak"])).round(2)
+
+        instance, created = DemandData.objects.get_or_create(GenStationID=39, Date=yesterday)
+        instance.Energy = load_factor
+        instance.GenType = 'Total'
+        instance.save()
+
+        subindex=['i','ii','iii','iv','v','vi','vii','viii']
+        alphabets=['a','b','c','d','e','f','g']
+
+    
+
+    # Create the report content as a string
+    report_content = f"""
+                 TRANSMISSION CORPORATION OF TELANGANA LTD
+               GRID OPERATION -- FINAL REPORT FOR {yesterday.strftime('%d/%m/%Y')}
+===============================================================================
+                         Generation at Peak Demand in MW     Generation In MU  
+Sl Generating                   Morning     Evening         {yesterday.strftime('%A')}{' '*(10-len(yesterday.strftime('%A')))}|  {previous_year_day.strftime('%A')}
+No Station              {gridfreq_data.iloc[0,0]:.2f}HZ/{gridfreq_data.iloc[0,2].strftime('%H:%M')}Hrs  {gridfreq_data.iloc[0,1]:.2f}HZ/{gridfreq_data.iloc[0,3].strftime('%H:%M')}Hrs  {yesterday.strftime('%d/%m/%Y')}|  {previous_year_day.strftime('%d/%m/%Y')}
+                      INS.CAP    (EX-BUS)    (EX-BUS)       (EX-BUS)  |  (EX-BUS)
+-----------------------(MW)-------------------------------------------------------
+(1)   (2)                          (3)          (4)            (5)          (6)
+--------------------------------------------------------------------------------
+ I  TS GENCO"""
+
+    # Add the data rows to the report content
+    for i in range(hydel.shape[0]):
+      row_content = f"""
+     {hydel.iloc[i,0]:<17}{hydel.iloc[i,2]:>6.0f}{hydel.iloc[i,3]:>12.0f}{hydel.iloc[i,4]:>12.0f}{hydel.iloc[i,5]:>14.3f}    |{hydel.iloc[i,6]:>10.3f}"""
+      report_content += row_content
+
+    row_content = f"""
+       TS Hydel-->    {hydel["InstalledCap"].sum():>6.0f}{hydel["MorningPeak"].sum():>12.0f}{hydel["EveningPeak"].sum():>12.0f}{hydel["Energy"].sum():>14.3f}    |{hydel["PrevEnergy"].sum():>10.3f}
+        """       
+    report_content += row_content
+
+
+    for i in range(thermal.shape[0]):
+      row_content = f"""
+     {thermal.iloc[i,0]:<17}{thermal.iloc[i,2]:>6.0f}{thermal.iloc[i,3]:>12.0f}{thermal.iloc[i,4]:>12.0f}{thermal.iloc[i,5]:>14.3f}    |{thermal.iloc[i,6]:>10.3f}"""
+      report_content += row_content
+
+    row_content = f"""
+       TS Thermal-->  {thermal["InstalledCap"].sum():>6.0f}{thermal["MorningPeak"].sum():>12.0f}{thermal["EveningPeak"].sum():>12.0f}{thermal["Energy"].sum():>14.3f}    |{thermal["PrevEnergy"].sum():>10.3f}"""       
+    report_content += row_content
+
+    row_content = f"""
+
+       TSGENCO Total->{genco["InstalledCap"].sum():>6.0f}{genco["MorningPeak"].sum():>12.0f}{genco["EveningPeak"].sum():>12.0f}{genco["Energy"].sum():>14.3f}    |{genco["PrevEnergy"].sum():>10.3f}"""       
+    report_content += row_content
+
+    for i in range(lta.shape[0]):
+      row_content = f"""
+
+     {lta.iloc[i,0]:<17}{lta.iloc[i,2]:>6.0f}{lta.iloc[i,3]:>12.0f}{lta.iloc[i,4]:>12.0f}{lta.iloc[i,5]:>14.3f}    |{lta.iloc[i,6]:>10.3f}"""
+      report_content += row_content
+
+    row_content = f"""
+
+II CENTRAL SECTOR"""       
+    report_content += row_content
+    row_content = f"""
+     {central_sector.iloc[0,0]:<17}{central_sector.iloc[0,2]:>6.0f}{central_sector.iloc[0,3]:>12.0f}{central_sector.iloc[0,4]:>12.0f}{central_sector.iloc[0,5]:>14.3f}    |{central_sector.iloc[0,6]:>10.3f}"""
+    report_content += row_content
+
+    row_content = f"""
+
+III TSSHARE OF APISGS->{APISGS.iloc[0,2]:>5.0f}{APISGS.iloc[0,3]:>12.0f}{APISGS.iloc[0,4]:>12.0f}{APISGS.iloc[0,5].round(2):>14.3f}    |{APISGS.iloc[0,6]:>10.3f}"""       
+    report_content += row_content
+
+    row_content = f"""
+
+
+                    TRANSMISSION CORPORATION OF TELANGANA LTD
+                  GRID OPERATION -- FINAL REPORT FOR {yesterday.strftime('%d/%m/%Y')}
+==================================================================================
+                             Generation at Peak Demand in MW     Generation In MU  
+Sl Generating                    Morning     Evening          {yesterday.strftime('%A')}{' '*(10-len(yesterday.strftime('%A')))} | {previous_year_day.strftime('%A')}
+No Station               {gridfreq_data.iloc[0,0]:.2f}HZ/{gridfreq_data.iloc[0,2].strftime('%H:%M')}Hrs  {gridfreq_data.iloc[0,1]:.2f}HZ/{gridfreq_data.iloc[0,3].strftime('%H:%M')}Hrs  {yesterday.strftime('%d/%m/%Y')}  |  {previous_year_day.strftime('%d/%m/%Y')}
+                       INS.CAP    (EX-BUS)    (EX-BUS)         (EX-BUS)  | (EX-BUS)
+------------------------(MW)-------------------------------------------------------
+(1)   (2)                            (3)          (4)            (5)         (6)
+-----------------------------------------------------------------------------------
+"""
+    report_content += row_content
+
+    row_content = f"""
+IV  PRIVATE SECTOR
+
+     a)"""       
+    report_content += row_content
+    for i in range(private.shape[0]):
+      row_content = f"""{private.iloc[i,0]:<15}{private.iloc[i,2]:>6.0f}{private.iloc[i,3]:>12.0f}{private.iloc[i,4]:>12.0f}{private.iloc[i,5]:>16.3f}     |{private.iloc[i,6]:>8.3f}"""
+      report_content += row_content
+
+    row_content = f"""
+
+     b)"""       
+    report_content += row_content
+    for i in range(wind.shape[0]):
+      row_content = f"""{wind.iloc[i,0]:<15}{wind.iloc[i,2]:>6.0f}{wind.iloc[i,3]:>12.0f}{wind.iloc[i,4]:>12.0f}{wind.iloc[i,5]:>16.3f}     |{wind.iloc[i,6]:>8.3f}"""
+      report_content += row_content
+
+    row_content = f"""
+
+     c)SOLAR          {solar["InstalledCap"].sum():>6.0f}
+"""       
+    report_content += row_content
+    for i in range(solar.shape[0]):
+      row_content = f"""
+       {subindex[i]}){' '*(1-i)}{solar.iloc[i,0]:<12}{solar.iloc[i,2]:>6.0f}{solar.iloc[i,3]:>12.0f}{solar.iloc[i,4]:>12.0f}{solar.iloc[i,5]:>16.3f}     |{solar.iloc[i,6]:>8.3f}"""
+      report_content += row_content
+    print(solar)
+    row_content = f"""
+
+     d)Nonconventional{nonconventional["InstalledCap"].sum():>6.0f}{' ':12}{'':12}"""       
+    report_content += row_content
+    for i in range(nonconventional.shape[0]):
+      row_content = f"""
+       {subindex[i]}){nonconventional.iloc[i,0]:<12}{'':>6}{nonconventional.iloc[i,3]:>12.0f}{nonconventional.iloc[i,4]:>12.0f}{nonconventional.iloc[i,5]:>16.3f}     |{nonconventional.iloc[i,6]:>8.3f}"""
+      report_content += row_content
+ 
+    row_content = f"""
+
+     PVT SECTOR TOTAL {private_total["InstalledCap"].sum():>6.0f}{private_total["MorningPeak"].sum():12.0f}{private_total["EveningPeak"].sum():12.0f}{private_total["Energy"].sum():>16.3f}     |{private_total["PrevEnergy"].sum():>8.3f}"""       
+    report_content += row_content
+
+    row_content = f"""
+
+V   STATE PURCHASES   {'':>6}{' ':12}{' ':12}
+"""       
+    report_content += row_content
+
+    for i in range(state_purchases.shape[0]):
+      row_content = f"""
+     {alphabets[i]}) {state_purchases.iloc[i,0]:<14}{'':>6}{state_purchases.iloc[i,3]:>12.0f}{state_purchases.iloc[i,4]:>12.0f}{state_purchases.iloc[i,5]:>16.3f}     |{state_purchases.iloc[i,6]:>8.3f}"""
+      report_content += row_content
+    row_content = f"""
+
+     STATE PURCHASE TOTAL   {state_purchases["MorningPeak"].sum():12.0f}{state_purchases["EveningPeak"].sum():12.0f}{state_purchases["Energy"].sum():>16.3f}     |{state_purchases["PrevEnergy"].sum():>8.3f}"""
+    report_content += row_content
+    row_content = f"""
+
+VI  THIRD PARTY PURCHASES   {third_party_purchase.iloc[0,3]:>12.0f}{third_party_purchase.iloc[0,4]:>12.0f}{third_party_purchase.iloc[0,5]:>16.3f}     |{third_party_purchase.iloc[0,6]:>8.3f}"""
+    report_content += row_content
+
+    row_content = f"""
+
+VII THIRD PARTY SALES       {third_party_sales.iloc[0,3]:>12.0f}{third_party_sales.iloc[0,4]:>12.0f}{third_party_sales.iloc[0,5]:>16.3f}     |{third_party_sales.iloc[0,6]:>8.3f}"""
+    report_content += row_content
+
+    row_content = f"""
+
+VIII TOTAL DEMAND & CONSUMP {gen_total["MorningPeak"]:>12.0f}{gen_total["EveningPeak"]:>12.0f}{gen_total["Energy"]:>16.3f}     |{gen_total["PrevEnergy"]:>8.3f}
+        (WITH PUMPS)"""
+    report_content += row_content
+
+    row_content = f"""
+
+IX  {pump.iloc[0,0]:<18}{' ':>6}{pump.iloc[0,3]:>12.0f}{pump.iloc[0,4]:>12.0f}{pump.iloc[0,5]:>16.3f}     |{pump.iloc[0,6]:>8.3f}"""
+    report_content += row_content
+
+    row_content = f"""
+
+X   {pump.iloc[1,0]:<18}{' ':>6}{pump.iloc[1,3]:>12.0f}{pump.iloc[1,4]:>12.0f}{pump.iloc[1,5]:>16.3f}     |{pump.iloc[1,6]:>8.3f}
+    """
+    report_content += row_content
+
+    row_content = f"""
+XI  TS DEMAND(EX-BUS) {gen_total_wo_pump["InstalledCap"]:<6.0f}{gen_total_wo_pump["MorningPeak"]:>12.0f}{gen_total_wo_pump["EveningPeak"]:>12.0f}{'':>16}     |{PrevTSDemand[0][0]:>8.0f}
+
+       ENERGY (MU)    {'':>6}{'':>12}{'':>12}{gen_total_wo_pump["Energy"]:>16.3f}     |{gen_total_wo_pump["PrevEnergy"]:>8.3f}"""
+    report_content += row_content
+
+    row_content = f"""
+
+XII LOAD FACTOR       {'':<6}{'':>12}{'':>12}{load_factor:>16.3f}%    |{gen_data[gen_data['GenStationID']==39][['PrevEnergy']].iloc[0,0]:>8.3f}%
+"""
+    report_content += row_content
+    print(gen_data[gen_data['GenStationID']==39][['PrevEnergy']].iloc[0,0])
+
+    romannumerals=['XIII','XIV','XV','XVI']
+    for i in range(maxcitysolardata.shape[0]):
+      row_content = f"""
+{romannumerals[i]:<5}{maxcitysolardata.iloc[i,1]:<25}{maxcitysolardata.iloc[i,2]:>8.0f} MW    AT   {str(maxcitysolardata.iloc[i,3])[:5]:>8} Hrs
+"""     
+      report_content += row_content
+
+
+
+
+
+
+
+    row_content = f"""
+                  STATUS OF COAL SUPPLIES TO THERMAL STATIONS ON :  {yesterday.strftime('%d/%m/%Y')}
+    ================================================================================
+     {'Station':<10}{'Op. Balance':^12}{'Receipts':^12}{'Consumption':^12}{'Balance':^12}{'Average coal':^15} 
+     {'':^10}{'(MTs)':^12}{'(MTs)':^12}{'(MTs)':^12}{'(MTs)':^12}{'required/day for':^15}
+     {'':^10}{'':^12}{'':^12}{'':^12}{'':^12}{'full Generation(MTs)':^15}
+    --------------------------------------------------------------------------------
+"""           
+    report_content += row_content
+
+
+    for i in range(coaldata.shape[0]):
+      if coaldata.iloc[i,0]==4:
+          row_content = f"""    {coaldata.iloc[i,1]:<10}{coaldata.iloc[i,2]:>10}{coaldata.iloc[i,3]:>12}{coaldata.iloc[i,4]:>12}{coaldata.iloc[i,7]-coaldata.iloc[i+1,4]:>12}{coaldata.iloc[i,5]:>15}
+"""
+      elif coaldata.iloc[i,0]==5:
+          row_content = f"""    {coaldata.iloc[i,1]:<10}{'':<10}{'':>12}{coaldata.iloc[i,4]:>12}{'':>12}{coaldata.iloc[i,5]:>15}
+"""
+      else:
+          row_content = f"""    {coaldata.iloc[i,1]:<10}{coaldata.iloc[i,2]:>10}{coaldata.iloc[i,3]:>12}{coaldata.iloc[i,4]:12}{coaldata.iloc[i,7]:>12}{coaldata.iloc[i,5]:>15}
+"""
+      report_content += row_content
+
+
+
+    row_content = f"""
+
+                            COAL WAGONS POSITION
+   ==========================================================
+     {'Station':<10}{'Op. Balance':^12}{'Receipts':^12}{'Consumption':^12}{'Balance':^12}
+   ----------------------------------------------------------
+"""           
+    report_content += row_content
+
+    for i in range(wagondata.shape[0]):
+      row_content = f"""    {wagondata.iloc[i,1]:<10}{wagondata.iloc[i,2]:>8}{wagondata.iloc[i,3]:>12}{wagondata.iloc[i,4]:>12}{wagondata.iloc[i,5]:>12}
+"""
+      report_content += row_content
+
+
+    response.write(report_content)
+
+    return response
+
+
+@login_required(login_url='login')
 def export_to_text(request):
     response = HttpResponse(content_type='text/plain')
     response['Content-Disposition'] = 'attachment; filename="custom_report.txt"'
