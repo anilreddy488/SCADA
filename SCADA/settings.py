@@ -28,6 +28,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['172.25.65.82']
 
+SESSION_EXPIRE_SECONDS = 3600
+SESSION_TIMEOUT_REDIRECT = 'dailyreport/login.html'
 
 # Application definition
 
@@ -52,6 +54,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django_session_timeout.middleware.SessionTimeoutMiddleware',
 ]
 
 ROOT_URLCONF = 'SCADA.urls'
