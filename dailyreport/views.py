@@ -208,9 +208,9 @@ def home(request):
 @login_required(login_url='login')
 def export_to_text_fir(request):
     response = HttpResponse(content_type='text/plain')
-    response['Content-Disposition'] = 'attachment; filename="custom_report.txt"'
-    today = datetime.datetime.strptime(request.GET['date'], '%Y-%m-%d').date()
-    yesterday = today - relativedelta(days=1)
+    response['Content-Disposition'] = 'attachment; filename="FIR.txt"'
+    yesterday = datetime.datetime.strptime(request.GET['date'], '%Y-%m-%d').date()
+    today = yesterday + relativedelta(days=1)
     yesterday_str = f'{yesterday.year}-{yesterday.month}-{yesterday.day:02}'
     daybeforeyesterday = today - relativedelta(days=2)
     cur_month = yesterday.month
@@ -315,7 +315,7 @@ def export_to_text_fir(request):
         cursor.close()
 
         gen_data=pd.DataFrame(gen_data,columns=['GenStationName', 'GenType', 'InstalledCap', 'MorningPeak', 'EveningPeak', 'Energy' ,'PrevEnergy','GenStationID'])
-
+        print(gen_data)
         gridfreq_data=pd.DataFrame(gridfreq_data,columns=['FreqMorning','FreqEvening','TimeMaxDemandMorning','TimeMaxDemandEvening'])
 
         weatherandotherdata = pd.DataFrame(weatherandotherdata,columns=['WID', 'Name', 'Type', 'Value', 'Date'])
@@ -613,9 +613,9 @@ XII LOAD FACTOR       {'':<6}{'':>12}{'':>12}{load_factor:>16.3f}%    |{gen_data
 @login_required(login_url='login')
 def export_to_text(request):
     response = HttpResponse(content_type='text/plain')
-    response['Content-Disposition'] = 'attachment; filename="custom_report.txt"'
-    today = datetime.datetime.strptime(request.GET['date'], '%Y-%m-%d').date()
-    yesterday = today - relativedelta(days=1)
+    response['Content-Disposition'] = 'attachment; filename="DailyReport.txt"'
+    yesterday = datetime.datetime.strptime(request.GET['date'], '%Y-%m-%d').date()
+    today = yesterday + relativedelta(days=1)
     yesterday_str = f'{yesterday.year}-{yesterday.month}-{yesterday.day:02}'
     daybeforeyesterday = today - relativedelta(days=2)
     cur_month = yesterday.month
@@ -786,9 +786,9 @@ def export_to_text(request):
         instance.Energy = tsdemand_monthcum[0][0]
         instance.save()
 
-        instance, created = DemandData.objects.get_or_create(GenStationID=38, Date=yesterday)
-        instance.Energy = tsdemand_finyearcum[0][0]
-        instance.save()
+#        instance, created = DemandData.objects.get_or_create(GenStationID=38, Date=yesterday)
+#        instance.Energy = tsdemand_finyearcum[0][0]
+#        instance.save()
 
         cursor.execute(query_gridfreq, {'yesterday': yesterday})
         gridfreq_data = cursor.fetchall()
@@ -974,7 +974,7 @@ No Station              {gridfreq_data.iloc[0,0]:.2f}HZ/{gridfreq_data.iloc[0,2]
 
        TSGENCO Total->{genco["InstalledCap"].sum():>6.0f}{genco["MorningPeak"].sum():>12.0f}{genco["EveningPeak"].sum():>12.0f}{genco["Energy"].sum():>14.3f}    |{genco["PrevEnergy"].sum():>10.3f}"""       
     report_content += row_content
-
+    print(lta)
     for i in range(lta.shape[0]):
       row_content = f"""
 
@@ -1279,14 +1279,49 @@ XII LOAD FACTOR       {'':<6}{'':>12}{'':>12}{load_factor:>16.3f}%    |{gen_data
 
     response.write(report_content)
 
+    if gen_total_wo_pump["MorningPeak"]>gen_total_wo_pump["EveningPeak"]:
+        string=f"""Sir,
+        Energy Demand Particulars for Dt: {yesterday_str}
+        {'Hydel':<20}-{hydel["MorningPeak"].sum():>8.0f} MW, {hydel["Energy"].sum():>8.3f} MU
+        {'Thermal':<20}-{thermal["MorningPeak"].sum():>8.0f} MW, {thermal["Energy"].sum():>8.3f} MU
+        {lta.loc[lta['GenStationID']==18].GenStationName.values[0]:<20}-{lta.loc[lta['GenStationID']==18].MorningPeak.values[0]:>8.0f} MW, {lta.loc[lta['GenStationID']==18].Energy.values[0]:>8.0f} MU
+        {lta.loc[lta['GenStationID']==19].GenStationName.values[0]:<20}-{lta.loc[lta['GenStationID']==19].MorningPeak.values[0]:>8.0f} MW, {lta.loc[lta['GenStationID']==19].Energy.values[0]:>8.0f} MU
+        {lta.loc[lta['GenStationID']==20].GenStationName.values[0]:<20}-{lta.loc[lta['GenStationID']==20].MorningPeak.values[0]:>8.0f} MW, {lta.loc[lta['GenStationID']==20].Energy.values[0]:>8.0f} MU
+        {central_sector.loc[central_sector['GenStationID']==21].GenStationName.values[0]:<20}-{central_sector.loc[central_sector['GenStationID']==21].MorningPeak.values[0]:>8.0f} MW, {central_sector.loc[central_sector['GenStationID']==21].Energy.values[0]:>8.0f} MU
+        {APISGS.loc[APISGS['GenStationID']==22].GenStationName.values[0]:<20}-{APISGS.loc[APISGS['GenStationID']==22].MorningPeak.values[0]:>8.0f} MW, {APISGS.loc[APISGS['GenStationID']==22].Energy.values[0]:>8.0f} MU
+        {'Pvt Sector':<20}-{private_total["MorningPeak"].sum():8.0f} MW, {private_total["Energy"].sum():>8.3f} MU
+        {'State Purchases':20}-{state_purchases["MorningPeak"].sum():8.0f} MW, {state_purchases["Energy"].sum():>8.3f} MU
+        {'Third Party Purchases':20}-{third_party_purchase["MorningPeak"].sum():8.0f} MW, {third_party_purchase["Energy"].sum():>8.3f} MU
+        {'Third Party Sales':20}-{third_party_sales["MorningPeak"].sum():8.0f} MW, {third_party_sales["Energy"].sum():>8.3f} MU
+        
+
+        """
+
+
+    else:
+        string=f"""Sir,
+        Energy Demand Particulars for Dt: {yesterday_str}
+        {'Hydel-':<20}{hydel["EveningPeak"].sum():>12.0f}MW, {hydel["Energy"].sum():>14.3f} MU
+        {'Thermal-':<20}{thermal["EveningPeak"].sum():>12.0f} MW, {thermal["Energy"].sum():>14.3f} MU
+        {lta.loc[lta['GenStationID']==18].GenStationName.values[0]}-{lta.loc[lta['GenStationID']==18].EveningPeak.values[0]} MW, {lta.loc[lta['GenStationID']==18].Energy.values[0]} MU
+        {lta.loc[lta['GenStationID']==19].GenStationName.values[0]}-{lta.loc[lta['GenStationID']==19].EveningPeak.values[0]} MW, {lta.loc[lta['GenStationID']==19].Energy.values[0]} MU
+        {lta.loc[lta['GenStationID']==20].GenStationName.values[0]}-{lta.loc[lta['GenStationID']==20].EveningPeak.values[0]} MW, {lta.loc[lta['GenStationID']==20].Energy.values[0]} MU
+        {central_sector.loc[central_sector['GenStationID']==21].GenStationName.values[0]}-{central_sector.loc[central_sector['GenStationID']==21].EveningPeak.values[0]} MW, {central_sector.loc[central_sector['GenStationID']==21].Energy.values[0]} MU
+        {APISGS.loc[APISGS['GenStationID']==22].GenStationName.values[0]}-{APISGS.loc[APISGS['GenStationID']==22].EveningPeak.values[0]} MW, {APISGS.loc[APISGS['GenStationID']==22].Energy.values[0]} MU
+        {'Pvt Sector-':<20}{private_total["EveningPeak"].sum():12.0f} MW, {private_total["Energy"].sum():>16.3f} MU
+        {'State Purchases-':20}{state_purchases["EveningPeak"].sum():12.0f} MW, {state_purchases["Energy"].sum():>16.3f} MU
+        {'Third Party Purchases-':20}{third_party_purchase["EveningPeak"].sum():12.0f} MW, {third_party_purchase["Energy"].sum():>16.3f} MU
+        {'Third Party Sales-':20}{third_party_sales["EveningPeak"].sum():12.0f} MW, {third_party_sales["Energy"].sum():>16.3f} MU
+        """
+    print(string)
     return response
 
 def export_dailymu_to_text(request):
-    response = HttpResponse(content_type='text/plain')
-    response['Content-Disposition'] = 'attachment; filename="custom_report.txt"'
 
-    today = datetime.date.today()
-    yesterday = today - relativedelta(days=1)
+    response = HttpResponse(content_type='text/plain')
+    response['Content-Disposition'] = 'attachment; filename="DailyMU.txt"'
+    yesterday = datetime.datetime.strptime(request.GET['date'], '%Y-%m-%d').date()
+    today = yesterday + relativedelta(days=1)
     yesterday_str = f'{yesterday.year}-{yesterday.month}-{yesterday.day:02}'
     daybeforeyesterday = today - relativedelta(days=2)
     cur_month = yesterday.month
@@ -1512,9 +1547,9 @@ def export_dailymu_to_text(request):
                             row_content = f"""{df.iloc[i,j]:>6}"""
                         else:
                             row_content = f"""{df.iloc[i,j]:>6.0f}"""
-                report_content += row_content
-            report_content += """
-""" 
+#                report_content += row_content
+#            report_content += """
+#""" 
         return report_content
 
     def addcontent_series(s,heading):
@@ -1549,6 +1584,24 @@ def export_dailymu_to_text(request):
             
         return report_content
 
+    def addcontent_series3(s,text):
+
+        report_content=''
+        for i in s.index[:-1]:
+            if i=='index':
+                row_content = f"""{s[i]:<21}{text:6}"""
+            else:
+                if type(s[i])==str:
+                    row_content = f"""{s[i]:>6}"""
+                else:
+                    row_content = f"""{s[i]:>6.0f}"""
+            report_content+=row_content
+        if type(s[i])==str:
+            row_content = f"""{s[-1]:>10}"""
+        else:
+            row_content = f"""{s[-1]:>10.0f}"""
+        report_content+=row_content
+        return report_content
     
     report_content += f"""{addcontent(report_hydel)}
 """
@@ -1559,7 +1612,12 @@ def export_dailymu_to_text(request):
     report_content += f"""{addcontent_thermal(report_thermal)}
 """
     s=report_thermal.sum(axis=0)
-    s[-1]=s[-3]*100000/s[1]/24/yesterday.day
+    print(s)
+    print(tsdemand_monthdata)
+    try:
+        s[-1]=s[-3]*100000/s[1]/24/yesterday.day
+    except:
+        s[-1]=np.nan
     report_content += f"""{addcontent_series2(s,'Total Thermal')}
 
 """
@@ -1608,8 +1666,10 @@ def export_dailymu_to_text(request):
     for i in range(tsdemand_monthdata['MaxTSDemand'].shape[0]):
         row_content = f"""{tsdemand_monthdata['MaxTSDemand'][i]:>6.0f}"""
         report_content += row_content
-    report_content+=f"""        {int(tsdemand_monthdata['MaxTSDemand'].max()):>8}"""
-
+    try:
+        report_content+=f"""        {int(tsdemand_monthdata['MaxTSDemand'].max()):>8}"""
+    except:
+        report_content+=f"""        {np.nan:>8}"""
 
 
     monthmaxcitysolardata['Time']= monthmaxcitysolardata['Time'].astype(str)
@@ -1635,8 +1695,10 @@ def export_dailymu_to_text(request):
 
     report_maxcitysolardemand['CUM']=' '
     report_maxcitysolardemand['MAX']=report_maxcitysolardemand.drop('CUM',axis=1).max(axis=1,skipna=True)
+    print(report_maxcitysolardemand)
     report_content += f"""
 {addcontent1(report_maxcitysolardemand)}"""
+    print(report_maxcitysolardemand)
 
     report_maxcitysolartime['CUM']=' '
     report_maxcitysolartime['MAX']=' '
@@ -1645,12 +1707,21 @@ def export_dailymu_to_text(request):
     report_maxcitysolartime.loc['City Max Demand Met','MAX']=report_maxcitysolartime.loc['City Max Demand Met',report_maxcitysolardemand.reset_index().drop(['CUM','index','MAX'],axis=1).astype(float).idxmax(axis=1,skipna=True)[0]]
     report_maxcitysolartime.loc['Solar Max Demand Met','MAX']=report_maxcitysolartime.loc['Solar Max Demand Met',report_maxcitysolardemand.reset_index().drop(['CUM','index','MAX'],axis=1).astype(float).idxmax(axis=1,skipna=True)[1]]
 #    print(report_maxcitysolartime)
+    print(report_maxcitysolartime)
     report_content += f"""{addcontent1(report_maxcitysolartime)}
 """
+    print(report_maxcitysolartime)
+    report_maxcitysolardemand.reset_index(inplace=True)
+    print(report_maxcitysolartime)
 
-
-
-
+    report_content += f"""{addcontent_series3(report_maxcitysolardemand.iloc[0],'')}
+"""
+    report_content += f"""{addcontent_series3(report_maxcitysolartime.iloc[0],'@')}
+"""
+    report_content += f"""{addcontent_series3(report_maxcitysolardemand.iloc[1],'')}
+"""
+    report_content += f"""{addcontent_series3(report_maxcitysolartime.iloc[1],'@')}
+"""
 
 
 
