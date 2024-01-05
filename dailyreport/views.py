@@ -385,7 +385,7 @@ def export_to_text_fir(request):
     # Create the report content as a string
     report_content = f"""
                  TRANSMISSION CORPORATION OF TELANGANA LTD
-               GRID OPERATION -- FINAL REPORT FOR {yesterday.strftime('%d/%m/%Y')}
+               GRID OPERATION -- INITIAL REPORT FOR {yesterday.strftime('%d/%m/%Y')}
 ===============================================================================
                          Generation at Peak Demand in MW     Generation In MU  
 Sl Generating                   Morning     Evening         {yesterday.strftime('%A')}{' '*(10-len(yesterday.strftime('%A')))}|  {previous_year_day.strftime('%A')}
@@ -445,7 +445,7 @@ III TSSHARE OF APISGS->{APISGS.iloc[0,2]:>5.0f}{APISGS.iloc[0,3]:>12.0f}{APISGS.
 
 
                     TRANSMISSION CORPORATION OF TELANGANA LTD
-                  GRID OPERATION -- FINAL REPORT FOR {yesterday.strftime('%d/%m/%Y')}
+                  GRID OPERATION -- INITIAL REPORT FOR {yesterday.strftime('%d/%m/%Y')}
 ==================================================================================
                              Generation at Peak Demand in MW     Generation In MU  
 Sl Generating                    Morning     Evening          {yesterday.strftime('%A')}{' '*(10-len(yesterday.strftime('%A')))} | {previous_year_day.strftime('%A')}
@@ -1584,24 +1584,7 @@ def export_dailymu_to_text(request):
             
         return report_content
 
-    def addcontent_series3(s,text):
 
-        report_content=''
-        for i in s.index[:-1]:
-            if i=='index':
-                row_content = f"""{s[i]:<21}{text:6}"""
-            else:
-                if type(s[i])==str:
-                    row_content = f"""{s[i]:>6}"""
-                else:
-                    row_content = f"""{s[i]:>6.0f}"""
-            report_content+=row_content
-        if type(s[i])==str:
-            row_content = f"""{s[-1]:>10}"""
-        else:
-            row_content = f"""{s[-1]:>10.0f}"""
-        report_content+=row_content
-        return report_content
     
     report_content += f"""{addcontent(report_hydel)}
 """
@@ -1651,7 +1634,7 @@ def export_dailymu_to_text(request):
 
 
     report_content += f"""
-{'':25}{'      '*(yesterday.day):>6}{'':8}{'Max':>8}
+{'':25}{'      '*(yesterday.day):>6}{'':8}{'':8}{'Max':>8}
 """
 
     report_content += f"""{'TSDemand(MU)':<27}"""
@@ -1659,6 +1642,7 @@ def export_dailymu_to_text(request):
         row_content = f"""{tsdemand_monthdata['Energy'][i]:>6.1f}"""
         report_content += row_content
     report_content+=f"""{tsdemand_monthdata['Energy'].sum():>8.2f}"""
+    report_content+=f"""{tsdemand_monthdata['Energy'].mean():>8.2f}"""
     report_content+=f"""{tsdemand_monthdata['Energy'].max():>8.2f}"""
     report_content += f"""
 {'TSDemand(MW)':<27}"""
@@ -1667,9 +1651,9 @@ def export_dailymu_to_text(request):
         row_content = f"""{tsdemand_monthdata['MaxTSDemand'][i]:>6.0f}"""
         report_content += row_content
     try:
-        report_content+=f"""        {int(tsdemand_monthdata['MaxTSDemand'].max()):>8}"""
+        report_content+=f"""                {int(tsdemand_monthdata['MaxTSDemand'].max()):>8}"""
     except:
-        report_content+=f"""        {np.nan:>8}"""
+        report_content+=f"""                {np.nan:>8}"""
 
 
     monthmaxcitysolardata['Time']= monthmaxcitysolardata['Time'].astype(str)
@@ -1694,18 +1678,20 @@ def export_dailymu_to_text(request):
 
 
     report_maxcitysolardemand['CUM']=' '
-    report_maxcitysolardemand['MAX']=report_maxcitysolardemand.drop('CUM',axis=1).max(axis=1,skipna=True)
+    report_maxcitysolardemand['AVG']=' '
+    report_maxcitysolardemand['MAX']=report_maxcitysolardemand.drop(['CUM','AVG'],axis=1).max(axis=1,skipna=True)
     print(report_maxcitysolardemand)
     report_content += f"""
 {addcontent1(report_maxcitysolardemand)}"""
     print(report_maxcitysolardemand)
 
     report_maxcitysolartime['CUM']=' '
+    report_maxcitysolartime['AVG']=' '
     report_maxcitysolartime['MAX']=' '
 #    print(report_maxcitysolartime)
     report_maxcitysolardemand.set_index('index',inplace=True)
-    report_maxcitysolartime.loc['City Max Demand Met','MAX']=report_maxcitysolartime.loc['City Max Demand Met',report_maxcitysolardemand.reset_index().drop(['CUM','index','MAX'],axis=1).astype(float).idxmax(axis=1,skipna=True)[0]]
-    report_maxcitysolartime.loc['Solar Max Demand Met','MAX']=report_maxcitysolartime.loc['Solar Max Demand Met',report_maxcitysolardemand.reset_index().drop(['CUM','index','MAX'],axis=1).astype(float).idxmax(axis=1,skipna=True)[1]]
+    report_maxcitysolartime.loc['City Max Demand Met','MAX']=report_maxcitysolartime.loc['City Max Demand Met',report_maxcitysolardemand.reset_index().drop(['CUM','index','MAX','AVG'],axis=1).astype(float).idxmax(axis=1,skipna=True)[0]]
+    report_maxcitysolartime.loc['Solar Max Demand Met','MAX']=report_maxcitysolartime.loc['Solar Max Demand Met',report_maxcitysolardemand.reset_index().drop(['CUM','index','MAX','AVG'],axis=1).astype(float).idxmax(axis=1,skipna=True)[1]]
 #    print(report_maxcitysolartime)
     print(report_maxcitysolartime)
     report_content += f"""{addcontent1(report_maxcitysolartime)}
@@ -1713,6 +1699,25 @@ def export_dailymu_to_text(request):
     print(report_maxcitysolartime)
     report_maxcitysolardemand.reset_index(inplace=True)
     print(report_maxcitysolartime)
+
+    def addcontent_series3(s,text):
+
+        report_content=''
+        for i in s.index[:-1]:
+            if i=='index':
+                row_content = f"""{s[i]:<21}{text:6}"""
+            else:
+                if type(s[i])==str:
+                    row_content = f"""{s[i]:>6}"""
+                else:
+                    row_content = f"""{s[i]:>6.0f}"""
+            report_content+=row_content
+        if type(s[i])==str:
+            row_content = f"""{s[-1]:>10}"""
+        else:
+            row_content = f"""{s[-1]:>10.0f}"""
+        report_content+=row_content
+        return report_content
 
     report_content += f"""{addcontent_series3(report_maxcitysolardemand.iloc[0],'')}
 """
