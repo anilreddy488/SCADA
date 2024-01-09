@@ -211,13 +211,13 @@ def export_to_text_fir(request):
     response['Content-Disposition'] = 'attachment; filename="FIR.txt"'
     yesterday = datetime.datetime.strptime(request.GET['date'], '%Y-%m-%d').date()
     today = yesterday + relativedelta(days=1)
-    yesterday_str = f'{yesterday.year}-{yesterday.month}-{yesterday.day:02}'
+    yesterday_str = f'{yesterday.year}-{yesterday.month:02}-{yesterday.day:02}'
     daybeforeyesterday = today - relativedelta(days=2)
     cur_month = yesterday.month
     cur_year = yesterday.year
     cur_yearmonth = f'{cur_year}-{cur_month:02}'
 
-    monthstartday = f'{cur_year}-{cur_month}-01'
+    monthstartday = f'{cur_year}-{cur_month:02}-01'
     fin_year_startday = f'{cur_year-1}-04-01'
 
     previous_year_day = yesterday - relativedelta(years=1)
@@ -277,7 +277,7 @@ def export_to_text_fir(request):
                
                SELECT GenStationID, GenStationName, GenType, InstalledCap, Energy, Date
                FROM month_data
-               WHERE month='{cur_year}-{cur_month}'
+               WHERE month='{cur_year}-{cur_month:02}'
                """
 
     query_maxcitysolar = f"""
@@ -616,15 +616,19 @@ def export_to_text(request):
     response['Content-Disposition'] = 'attachment; filename="DailyReport.txt"'
     yesterday = datetime.datetime.strptime(request.GET['date'], '%Y-%m-%d').date()
     today = yesterday + relativedelta(days=1)
-    yesterday_str = f'{yesterday.year}-{yesterday.month}-{yesterday.day:02}'
+    yesterday_str = f'{yesterday.year}-{yesterday.month:02}-{yesterday.day:02}'
     daybeforeyesterday = today - relativedelta(days=2)
-    cur_month = yesterday.month
+    cur_month = f'{yesterday.month:02}'
     cur_year = yesterday.year
     cur_yearmonth = f'{cur_year}-{cur_month:02}'
 
-    monthstartday = f'{cur_year}-{cur_month}-01'
-    fin_year_startday = f'{cur_year-1}-04-01'
+    monthstartday = f'{cur_year}-{cur_month:02}-01'
 
+    if int(cur_month)<4:
+        fin_year_startday = f'{cur_year-1}-04-01'
+    else:
+        fin_year_startday = f'{cur_year}-04-01'
+    print(monthstartday)
     previous_year_day = yesterday - relativedelta(years=1)
     
 
@@ -651,14 +655,14 @@ def export_to_text(request):
     query_monthdataTSDemand = """
                SELECT MorningPeak, EveningPeak, Energy, Date
                FROM dailyreport_DemandData
-               WHERE Date BETWEEN %(monthstartday)s AND %(yesterday)s AND GenStationID=36
+               WHERE (Date BETWEEN %(monthstartday)s AND %(yesterday)s) AND GenStationID=36
                """
 
 
     query_TsdemandMonthCum = """
                SELECT SUM(Energy) 
                FROM dailyreport_DemandData
-               WHERE Date BETWEEN %(monthstartday)s AND %(yesterday)s AND GenStationID=36
+               WHERE (Date BETWEEN %(monthstartday)s AND %(yesterday)s) AND GenStationID=36
                """
 
 
@@ -666,6 +670,12 @@ def export_to_text(request):
                SELECT SUM(Energy) 
                FROM dailyreport_DemandData
                WHERE (Date BETWEEN %(fin_year_startday)s AND %(yesterday)s) AND GenStationID=36
+               """
+
+    query_TsdemandFinYearCumCorrection = """
+               SELECT SUM(Energy) 
+               FROM dailyreport_DemandData
+               WHERE (Date BETWEEN %(fin_year_startday)s AND %(yesterday)s) AND GenStationID=39
                """
 
     query_gridfreq = """SELECT FreqMorning,FreqEvening,TimeMaxDemandMorning,TimeMaxDemandEvening
@@ -678,7 +688,7 @@ def export_to_text(request):
                FROM dailyreport_centralsectordata)
                SELECT CentralStationID, CenStationName, Energy, Date
                FROM month_data
-               WHERE month='{cur_year}-{cur_month}'
+               WHERE month='{cur_year}-{cur_month:02}'
                """
 
     query_schdrwl = f"""
@@ -687,7 +697,7 @@ def export_to_text(request):
                FROM dailyreport_SchDrwlData)
                SELECT StateID, StateName, Schedule, Drawl, Date
                FROM month_data
-               WHERE month='{cur_year}-{cur_month}'
+               WHERE month='{cur_year}-{cur_month:02}'
                """
 
     query_levelstorage = f"""
@@ -752,7 +762,7 @@ def export_to_text(request):
                
                SELECT GenStationID, GenStationName, GenType, InstalledCap, Energy, Date
                FROM month_data
-               WHERE month='{cur_year}-{cur_month}'
+               WHERE month='{cur_year}-{cur_month:02}'
                """
 
     query_month_maxcitysolar = f"""
@@ -762,7 +772,7 @@ def export_to_text(request):
                
                SELECT PID, Name, MaxDemand, Time, Date
                FROM month_data
-               WHERE month='{cur_year}-{cur_month}'
+               WHERE month='{cur_year}-{cur_month:02}'
                """
 
                 
@@ -782,13 +792,19 @@ def export_to_text(request):
         cursor.execute(query_TsdemandFinYearCum, {'yesterday': yesterday, 'fin_year_startday': fin_year_startday})
         tsdemand_finyearcum = cursor.fetchall()
 
+        cursor.execute(query_TsdemandFinYearCumCorrection, {'yesterday': yesterday, 'fin_year_startday': fin_year_startday})
+        tsdemand_finyearcumcorrection = cursor.fetchall()
+
+
+        print(tsdemand_monthcum[0][0],tsdemand_finyearcumcorrection[0][0])
+
         instance, created = DemandData.objects.get_or_create(GenStationID=37, Date=yesterday)
-        instance.Energy = tsdemand_monthcum[0][0]
+        instance.Energy = tsdemand_monthcum[0][0]#+tsdemand_finyearcumcorrection[0][0]
         instance.save()
 
-#        instance, created = DemandData.objects.get_or_create(GenStationID=38, Date=yesterday)
-#        instance.Energy = tsdemand_finyearcum[0][0]
-#        instance.save()
+        instance, created = DemandData.objects.get_or_create(GenStationID=38, Date=yesterday)
+        instance.Energy = tsdemand_finyearcum[0][0]
+        instance.save()
 
         cursor.execute(query_gridfreq, {'yesterday': yesterday})
         gridfreq_data = cursor.fetchall()
@@ -867,7 +883,7 @@ def export_to_text(request):
 
         monthmaxcitysolardata = pd.DataFrame(monthmaxcitysolardata,columns=['PID','Name','MaxDemand','Time','Date'])
         maxcitysolardata = monthmaxcitysolardata[monthmaxcitysolardata['Date']==yesterday]
-
+        print(monthmaxcitysolardata)
 
 
         centralgendata_cum=centralgendata[['CentralStationID','Energy']].groupby(['CentralStationID']).sum()
@@ -882,7 +898,7 @@ def export_to_text(request):
         schdrwldata_today['Diff']=schdrwldata_today['Drawl']-schdrwldata_today['Schedule']
         schdrwldata_today['CumDiff']=schdrwldata_today['MonthCumDrawl']-schdrwldata_today['MonthCumSch']
         schdrwldata_today = schdrwldata_today.sort_values(by='StateID')
-        print(schdrwldata_today)
+
 
         thermal=gen_data[gen_data["GenType"] == 'Thermal']
 
@@ -974,7 +990,7 @@ No Station              {gridfreq_data.iloc[0,0]:.2f}HZ/{gridfreq_data.iloc[0,2]
 
        TSGENCO Total->{genco["InstalledCap"].sum():>6.0f}{genco["MorningPeak"].sum():>12.0f}{genco["EveningPeak"].sum():>12.0f}{genco["Energy"].sum():>14.3f}    |{genco["PrevEnergy"].sum():>10.3f}"""       
     report_content += row_content
-    print(lta)
+
     for i in range(lta.shape[0]):
       row_content = f"""
 
@@ -1103,14 +1119,15 @@ XI  TS DEMAND(EX-BUS) {gen_total_wo_pump["InstalledCap"]:<6.0f}{gen_total_wo_pum
 XII LOAD FACTOR       {'':<6}{'':>12}{'':>12}{load_factor:>16.3f}%    |{gen_data[gen_data['GenStationID']==39][['PrevEnergy']].iloc[0,0]:>8.3f}%
 """
     report_content += row_content
-    print(gen_data[gen_data['GenStationID']==39][['PrevEnergy']].iloc[0,0])
+
 
     romannumerals=['XIII','XIV','XV','XVI']
     for i in range(maxcitysolardata.shape[0]):
-      row_content = f"""
+        row_content = f"""
 {romannumerals[i]:<5}{maxcitysolardata.iloc[i,1]:<25}{maxcitysolardata.iloc[i,2]:>8.0f} MW    AT   {str(maxcitysolardata.iloc[i,3])[:5]:>8} Hrs
-"""     
-      report_content += row_content
+"""   
+        print(row_content)
+        report_content += row_content
 
 
     
@@ -1185,7 +1202,7 @@ XII LOAD FACTOR       {'':<6}{'':>12}{'':>12}{load_factor:>16.3f}%    |{gen_data
 """
       report_content += row_content
 
-    print(levelstoragedata)
+
     row_content = f"""
 
                                     INFLOWS AND DISCHARGES
@@ -1313,7 +1330,7 @@ XII LOAD FACTOR       {'':<6}{'':>12}{'':>12}{load_factor:>16.3f}%    |{gen_data
         {'Third Party Purchases-':20}{third_party_purchase["EveningPeak"].sum():12.0f} MW, {third_party_purchase["Energy"].sum():>16.3f} MU
         {'Third Party Sales-':20}{third_party_sales["EveningPeak"].sum():12.0f} MW, {third_party_sales["Energy"].sum():>16.3f} MU
         """
-    print(string)
+
     return response
 
 def export_dailymu_to_text(request):
@@ -1322,13 +1339,13 @@ def export_dailymu_to_text(request):
     response['Content-Disposition'] = 'attachment; filename="DailyMU.txt"'
     yesterday = datetime.datetime.strptime(request.GET['date'], '%Y-%m-%d').date()
     today = yesterday + relativedelta(days=1)
-    yesterday_str = f'{yesterday.year}-{yesterday.month}-{yesterday.day:02}'
+    yesterday_str = f'{yesterday.year}-{yesterday.month:02}-{yesterday.day:02}'
     daybeforeyesterday = today - relativedelta(days=2)
     cur_month = yesterday.month
     cur_year = yesterday.year
     cur_yearmonth = f'{cur_year}-{cur_month:02}'
 
-    monthstartday = f'{cur_year}-{cur_month}-01'
+    monthstartday = f'{cur_year}-{cur_month:02}-01'
     fin_year_startday = f'{cur_year-1}-04-01'
 
     previous_year_day = yesterday - relativedelta(years=1)
@@ -1356,7 +1373,7 @@ def export_dailymu_to_text(request):
                
                SELECT GenStationID, GenStationName, GenType, InstalledCap, Energy, Date
                FROM month_data
-               WHERE month='{cur_year}-{cur_month}'
+               WHERE month='{cur_year}-{cur_month:02}'
                """
 
     query_month_maxcitysolar = f"""
@@ -1366,7 +1383,7 @@ def export_dailymu_to_text(request):
                
                SELECT PID, Name, MaxDemand, Time, Date
                FROM month_data
-               WHERE month='{cur_year}-{cur_month}'
+               WHERE month='{cur_year}-{cur_month:02}'
                """
                 
     with connection.cursor() as cursor:
@@ -1403,7 +1420,7 @@ def export_dailymu_to_text(request):
 
         def monthlyenergyreport(df_allgen,type):
             df_filtered=df_allgen[df_allgen['GenType'].isin(type)]
-            df_report=pd.DataFrame(index=df_filtered['GenStationName'].unique(),columns=['InstalledCap']+[f'{cur_year}-{cur_month}-{x:02}' for x in range(1,yesterday.day+1)])
+            df_report=pd.DataFrame(index=df_filtered['GenStationName'].unique(),columns=['InstalledCap']+[f'{cur_year}-{cur_month:02}-{x:02}' for x in range(1,yesterday.day+1)])
             for date in df_report.columns:
                 for gen in df_report.index:
                     try:
@@ -1428,7 +1445,7 @@ def export_dailymu_to_text(request):
         report_statepurchases=monthlyenergyreport(monthgendata,['State Purchases','Third Party Purchases','Third Party Sales','Pump'])
 
         monthdata_private=monthgendata[monthgendata["GenType"].str.contains("Private") & ~(monthgendata["GenType"].isin(['Private_solar','Private_Nonconventional']))]
-        report_private = pd.DataFrame(index=monthdata_private['GenStationName'].unique(),columns=['InstalledCap']+[f'{cur_year}-{cur_month}-{x:02}' for x in range(1,yesterday.day+1)])
+        report_private = pd.DataFrame(index=monthdata_private['GenStationName'].unique(),columns=['InstalledCap']+[f'{cur_year}-{cur_month:02}-{x:02}' for x in range(1,yesterday.day+1)])
         for date in report_private.columns:
             for gen in report_private.index:
                 try:
@@ -1595,8 +1612,7 @@ def export_dailymu_to_text(request):
     report_content += f"""{addcontent_thermal(report_thermal)}
 """
     s=report_thermal.sum(axis=0)
-    print(s)
-    print(tsdemand_monthdata)
+
     try:
         s[-1]=s[-3]*100000/s[1]/24/yesterday.day
     except:
@@ -1657,7 +1673,7 @@ def export_dailymu_to_text(request):
 
 
     monthmaxcitysolardata['Time']= monthmaxcitysolardata['Time'].astype(str)
-    report_maxcitysolardemand = pd.DataFrame(index=monthmaxcitysolardata['Name'].unique(),columns=[f'{cur_year}-{cur_month}-{x:02}' for x in range(1,yesterday.day+1)])
+    report_maxcitysolardemand = pd.DataFrame(index=monthmaxcitysolardata['Name'].unique(),columns=[f'{cur_year}-{cur_month:02}-{x:02}' for x in range(1,yesterday.day+1)])
 
     for date in report_maxcitysolardemand.columns:
         for gen in report_maxcitysolardemand.index:
@@ -1667,7 +1683,7 @@ def export_dailymu_to_text(request):
                 pass
 
 
-    report_maxcitysolartime = pd.DataFrame(index=monthmaxcitysolardata['Name'].unique(),columns=[f'{cur_year}-{cur_month}-{x:02}' for x in range(1,yesterday.day+1)])
+    report_maxcitysolartime = pd.DataFrame(index=monthmaxcitysolardata['Name'].unique(),columns=[f'{cur_year}-{cur_month:02}-{x:02}' for x in range(1,yesterday.day+1)])
     for date in report_maxcitysolartime.columns:
         for gen in report_maxcitysolartime.index:
             try:
@@ -1680,10 +1696,10 @@ def export_dailymu_to_text(request):
     report_maxcitysolardemand['CUM']=' '
     report_maxcitysolardemand['AVG']=' '
     report_maxcitysolardemand['MAX']=report_maxcitysolardemand.drop(['CUM','AVG'],axis=1).max(axis=1,skipna=True)
-    print(report_maxcitysolardemand)
+
     report_content += f"""
 {addcontent1(report_maxcitysolardemand)}"""
-    print(report_maxcitysolardemand)
+
 
     report_maxcitysolartime['CUM']=' '
     report_maxcitysolartime['AVG']=' '
@@ -1693,12 +1709,12 @@ def export_dailymu_to_text(request):
     report_maxcitysolartime.loc['City Max Demand Met','MAX']=report_maxcitysolartime.loc['City Max Demand Met',report_maxcitysolardemand.reset_index().drop(['CUM','index','MAX','AVG'],axis=1).astype(float).idxmax(axis=1,skipna=True)[0]]
     report_maxcitysolartime.loc['Solar Max Demand Met','MAX']=report_maxcitysolartime.loc['Solar Max Demand Met',report_maxcitysolardemand.reset_index().drop(['CUM','index','MAX','AVG'],axis=1).astype(float).idxmax(axis=1,skipna=True)[1]]
 #    print(report_maxcitysolartime)
-    print(report_maxcitysolartime)
+
     report_content += f"""{addcontent1(report_maxcitysolartime)}
 """
-    print(report_maxcitysolartime)
+
     report_maxcitysolardemand.reset_index(inplace=True)
-    print(report_maxcitysolartime)
+
 
     def addcontent_series3(s,text):
 
