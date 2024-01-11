@@ -26,7 +26,7 @@ from tablib import Dataset
 
 
 
-
+@login_required(login_url='login')
 def import_data_from_excel(file_path):
     try:
         # Read the Excel file using pandas
@@ -179,6 +179,7 @@ def import_data_from_excel(file_path):
     except Exception as e:
         return False, str(e)  # Error message
 
+@login_required(login_url='login')
 def upload_excel(request):
     if request.method == 'POST':
         form = ExcelUploadForm(request.POST, request.FILES)
@@ -665,6 +666,12 @@ def export_to_text(request):
                WHERE (Date BETWEEN %(monthstartday)s AND %(yesterday)s) AND GenStationID=36
                """
 
+    query_TsdemandMonthCumCorrection = """
+               SELECT SUM(Energy) 
+               FROM dailyreport_DemandData
+               WHERE (Date BETWEEN %(monthstartday)s AND %(yesterday)s) AND GenStationID=39
+               """
+
 
     query_TsdemandFinYearCum = """
                SELECT SUM(Energy) 
@@ -795,15 +802,15 @@ def export_to_text(request):
         cursor.execute(query_TsdemandFinYearCumCorrection, {'yesterday': yesterday, 'fin_year_startday': fin_year_startday})
         tsdemand_finyearcumcorrection = cursor.fetchall()
 
-
-        print(tsdemand_monthcum[0][0],tsdemand_finyearcumcorrection[0][0])
+        cursor.execute(query_TsdemandMonthCumCorrection, {'yesterday': yesterday,  'monthstartday': monthstartday})
+        tsdemand_monthcumcorrection = cursor.fetchall()
 
         instance, created = DemandData.objects.get_or_create(GenStationID=37, Date=yesterday)
-        instance.Energy = tsdemand_monthcum[0][0]#+tsdemand_finyearcumcorrection[0][0]
+        instance.Energy = tsdemand_monthcum[0][0]+tsdemand_monthcumcorrection[0][0]
         instance.save()
 
         instance, created = DemandData.objects.get_or_create(GenStationID=38, Date=yesterday)
-        instance.Energy = tsdemand_finyearcum[0][0]
+        instance.Energy = tsdemand_finyearcum[0][0]+tsdemand_finyearcumcorrection[0][0]
         instance.save()
 
         cursor.execute(query_gridfreq, {'yesterday': yesterday})
