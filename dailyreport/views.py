@@ -26,7 +26,7 @@ from tablib import Dataset
 
 
 
-@login_required(login_url='login')
+
 def import_data_from_excel(file_path):
     try:
         # Read the Excel file using pandas
@@ -179,7 +179,6 @@ def import_data_from_excel(file_path):
     except Exception as e:
         return False, str(e)  # Error message
 
-@login_required(login_url='login')
 def upload_excel(request):
     if request.method == 'POST':
         form = ExcelUploadForm(request.POST, request.FILES)
@@ -371,7 +370,7 @@ def export_to_text_fir(request):
 
         gen_total_wo_pump=gen_total.add(pump_total)
 
-        load_factor=(gen_total_wo_pump["Energy"]*1000*100/24/max(gen_total_wo_pump["MorningPeak"],gen_total_wo_pump["MorningPeak"])).round(2)
+        load_factor=(gen_total_wo_pump["Energy"]*1000*100/24/max(gen_total_wo_pump["MorningPeak"],gen_total_wo_pump["EveningPeak"])).round(2)
 
         instance, created = DemandData.objects.get_or_create(GenStationID=39, Date=yesterday)
         instance.Energy = load_factor
@@ -631,6 +630,7 @@ def export_to_text(request):
         fin_year_startday = f'{cur_year}-04-01'
     print(monthstartday)
     previous_year_day = yesterday - relativedelta(years=1)
+    previous_year_today = today - relativedelta(years=1)
     
 
     query_Gen = """WITH present_data AS
@@ -717,19 +717,19 @@ def export_to_text(request):
                FROM dailyreport_LevelStorageData AS d
                LEFT OUTER JOIN dailyreport_LevelStorage AS ls
                ON d.DamID=ls.DamID AND d.Level=ls.Level
-               WHERE Date=%(yesterday)s),
+               WHERE Date=%(today)s),
 
                last_year_data AS
                (SELECT d.DamID, d.DamName, d.Level, ls.Storage 
                FROM dailyreport_LevelStorageData AS d
                LEFT OUTER JOIN dailyreport_LevelStorage AS ls
                ON d.DamID=ls.DamID AND d.Level=ls.Level
-               WHERE Date=%(previous_year_day)s),
+               WHERE Date=%(previous_year_today)s),
 
                yesterday_data AS
                (SELECT DamID, Level
                FROM dailyreport_LevelStorageData AS d
-               WHERE Date=%(daybeforeyesterday)s)
+               WHERE Date=%(yesterday)s)
 
                SELECT p.DamID, p.DamName, l.Level, l.Storage, p.Level, p.Storage, p.Level-y.Level AS LevelRaise
                FROM present_data AS p 
@@ -796,22 +796,22 @@ def export_to_text(request):
         cursor.execute(query_TsdemandMonthCum, {'yesterday': yesterday, 'monthstartday': monthstartday})
         tsdemand_monthcum = cursor.fetchall()
         
-        cursor.execute(query_TsdemandFinYearCum, {'yesterday': yesterday, 'fin_year_startday': fin_year_startday})
-        tsdemand_finyearcum = cursor.fetchall()
+        #cursor.execute(query_TsdemandFinYearCum, {'yesterday': yesterday, 'fin_year_startday': fin_year_startday})
+        #tsdemand_finyearcum = cursor.fetchall()
 
-        cursor.execute(query_TsdemandFinYearCumCorrection, {'yesterday': yesterday, 'fin_year_startday': fin_year_startday})
-        tsdemand_finyearcumcorrection = cursor.fetchall()
+        #cursor.execute(query_TsdemandFinYearCumCorrection, {'yesterday': yesterday, 'fin_year_startday': fin_year_startday})
+        #tsdemand_finyearcumcorrection = cursor.fetchall()
 
-        cursor.execute(query_TsdemandMonthCumCorrection, {'yesterday': yesterday,  'monthstartday': monthstartday})
-        tsdemand_monthcumcorrection = cursor.fetchall()
+        #cursor.execute(query_TsdemandMonthCumCorrection, {'yesterday': yesterday,  'monthstartday': monthstartday})
+        #tsdemand_monthcumcorrection = cursor.fetchall()
 
         instance, created = DemandData.objects.get_or_create(GenStationID=37, Date=yesterday)
-        instance.Energy = tsdemand_monthcum[0][0]+tsdemand_monthcumcorrection[0][0]
+        instance.Energy = tsdemand_monthcum[0][0]#+tsdemand_monthcumcorrection[0][0]
         instance.save()
 
-        instance, created = DemandData.objects.get_or_create(GenStationID=38, Date=yesterday)
-        instance.Energy = tsdemand_finyearcum[0][0]+tsdemand_finyearcumcorrection[0][0]
-        instance.save()
+        #instance, created = DemandData.objects.get_or_create(GenStationID=38, Date=yesterday)
+        #instance.Energy = tsdemand_finyearcum[0][0]+tsdemand_finyearcumcorrection[0][0]
+        #instance.save()
 
         cursor.execute(query_gridfreq, {'yesterday': yesterday})
         gridfreq_data = cursor.fetchall()
@@ -822,7 +822,7 @@ def export_to_text(request):
         cursor.execute(query_schdrwl,{'cur_year':cur_year,'cur_month':cur_month})
         schdrwldata = cursor.fetchall()
 
-        cursor.execute(query_levelstoragedata,{'yesterday': yesterday, 'previous_year_day': previous_year_day, 'daybeforeyesterday':daybeforeyesterday})
+        cursor.execute(query_levelstoragedata,{'today': today, 'previous_year_today': previous_year_today, 'yesterday':yesterday})
         levelstoragedata = cursor.fetchall()
 
         cursor.execute(query_inflowsdischarge,{'yesterday': yesterday})
@@ -946,7 +946,7 @@ def export_to_text(request):
 
         gen_total_wo_pump=gen_total.add(pump_total)
 
-        load_factor=(gen_total_wo_pump["Energy"]*1000*100/24/max(gen_total_wo_pump["MorningPeak"],gen_total_wo_pump["MorningPeak"])).round(2)
+        load_factor=(gen_total_wo_pump["Energy"]*1000*100/24/max(gen_total_wo_pump["MorningPeak"],gen_total_wo_pump["EveningPeak"])).round(2)
 
         instance, created = DemandData.objects.get_or_create(GenStationID=39, Date=yesterday)
         instance.Energy = load_factor
@@ -1185,7 +1185,7 @@ XII LOAD FACTOR       {'':<6}{'':>12}{'':>12}{load_factor:>16.3f}%    |{gen_data
     
     TS GRID DEMAND for {yesterday.strftime('%d/%m/%Y')} (in MU)                  :{gen_total_wo_pump["Energy"]:>10.3f}    |{gen_total_wo_pump['PrevEnergy']:>10.3f}
     {'Cumulative for the Month Total (in MU)':<55}:{tsdemand_monthcum[0][0]:>10.3f}    |{gen_data[gen_data['GenStationID']==37][['PrevEnergy']].iloc[0,0]:>10.3f}
-    {'Cumulative for the Year Total (in MU) (From 1st April)':<55}:{tsdemand_finyearcum[0][0]:>10.3f}    |{gen_data[gen_data['GenStationID']==38][['PrevEnergy']].iloc[0,0]:>10.3f}
+    {'Cumulative for the Year Total (in MU) (From 1st April)':<55}:{gen_data[gen_data['GenStationID']==38][['Energy']].iloc[0,0]:>10.3f}    |{gen_data[gen_data['GenStationID']==38][['PrevEnergy']].iloc[0,0]:>10.3f}
     
     
     
@@ -1209,7 +1209,9 @@ XII LOAD FACTOR       {'':<6}{'':>12}{'':>12}{load_factor:>16.3f}%    |{gen_data
 """
       report_content += row_content
 
-
+    row_content = f"""    ===================================================================================
+"""           
+    report_content += row_content
     row_content = f"""
 
                                     INFLOWS AND DISCHARGES
@@ -1447,6 +1449,8 @@ def export_dailymu_to_text(request):
         report_genco=pd.concat([report_hydel,report_thermal],axis=0).reset_index()
         report_thermal['CapUtil']=report_thermal['CUM']*100000/report_thermal['InstalledCap']/24/yesterday.day
         report_lta=monthlyenergyreport(monthgendata,['LTA'])
+        report_cgs=monthlyenergyreport(monthgendata,['Central Sector'])
+        report_apisgs=monthlyenergyreport(monthgendata,['APISGS'])
         report_solar=monthlyenergyreport(monthgendata,['Private_solar'])
         report_nonconventional=monthlyenergyreport(monthgendata,['Private_Nonconventional'])
         report_statepurchases=monthlyenergyreport(monthgendata,['State Purchases','Third Party Purchases','Third Party Sales','Pump'])
@@ -1476,6 +1480,8 @@ def export_dailymu_to_text(request):
     report_content += row_content
     
     heading = ['Station','(MW)']+[f'{x:02}' for x in range(1,yesterday.day+1)]+['CUM','AVG','%CAPUTIL']
+    report_content += f"""{'-'*(22+6+8+8+8+6*yesterday.day)}
+"""
     for i in range(len(heading)):
         if i ==0:
             row_content = f"""{heading[i]:<19}"""
@@ -1487,7 +1493,8 @@ def export_dailymu_to_text(request):
         report_content += row_content
     report_content += """
 """
-    
+    report_content += f"""{'-'*(22+6+8+8+8+6*yesterday.day)}
+"""
     def addcontent(df):
         report_content=''
         df.reset_index(inplace=True)
@@ -1635,7 +1642,9 @@ def export_dailymu_to_text(request):
 
 
 
-    report_content += f"""{addcontent(report_lta)}
+    report_content += f"""{addcontent(report_lta)}"""
+    report_content += f"""{addcontent(report_cgs)}"""
+    report_content += f"""{addcontent(report_apisgs)}
 """
     report_content += """Private Sector:
 """
@@ -1656,8 +1665,7 @@ def export_dailymu_to_text(request):
     report_content += f"""{addcontent(report_statepurchases)}"""
 
 
-    report_content += f"""
-{'':25}{'      '*(yesterday.day):>6}{'':8}{'':8}{'Max':>8}
+    report_content += f"""{'':25}{'      '*(yesterday.day):>6}{'':8}{'':8}{'Max':>8}
 """
 
     report_content += f"""{'TSDemand(MU)':<27}"""
