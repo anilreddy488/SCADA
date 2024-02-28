@@ -462,7 +462,7 @@ No Station               {gridfreq_data.iloc[0,0]:.2f}HZ/{gridfreq_data.iloc[0,2
 IV  PRIVATE SECTOR
 
      a) """   
-    print(private)
+#    print(private)
     report_content += row_content
     row_content = f"""{private.iloc[0,0]:<14}{private.iloc[0,2]:>6.0f}{private.iloc[0,3]:>12.0f}{private.iloc[0,4]:>12.0f}{private.iloc[0,5]:>16.3f}     |{private.iloc[0,6]:>8.3f}"""
     report_content += row_content
@@ -594,7 +594,9 @@ XII Load Factor       {'':<6}{'':>12}{'':>12}{load_factor:>16.3f}%    |{gen_data
           row_content = f"""    {coaldata.iloc[i,1]:<10}{coaldata.iloc[i,2]:>10}{coaldata.iloc[i,3]:>12}{coaldata.iloc[i,4]:12}{coaldata.iloc[i,7]:>12}{coaldata.iloc[i,5]:>15}
 """
       report_content += row_content
-
+    row_content = f"""    ================================================================================
+"""
+    report_content += row_content
 
 
     row_content = f"""
@@ -610,7 +612,9 @@ XII Load Factor       {'':<6}{'':>12}{'':>12}{load_factor:>16.3f}%    |{gen_data
       row_content = f"""    {wagondata.iloc[i,1]:<15}{wagondata.iloc[i,2]:>13}{wagondata.iloc[i,3]:>17}{wagondata.iloc[i,4]:>17}{wagondata.iloc[i,5]:>17}
 """
       report_content += row_content
-
+    row_content = f"""    ================================================================================
+"""
+    report_content += row_content
     if gen_total_wo_pump["MorningPeak"]>gen_total_wo_pump["EveningPeak"]:
         row_content=f"""
         
@@ -1108,7 +1112,7 @@ No Station               {gridfreq_data.iloc[0,0]:.2f}HZ/{gridfreq_data.iloc[0,2
 IV  PRIVATE SECTOR
 
      a) """   
-    print(private)
+#    print(private)
     report_content += row_content
     row_content = f"""{private.iloc[0,0]:<14}{private.iloc[0,2]:>6.0f}{private.iloc[0,3]:>12.0f}{private.iloc[0,4]:>12.0f}{private.iloc[0,5]:>16.3f}     |{private.iloc[0,6]:>8.3f}"""
     report_content += row_content
@@ -1278,7 +1282,7 @@ TOTAL SCHEDULES & DRAWALS FROM CENTRAL NETWORK INCLUDING CENTRAL GENERATING STAT
     
     
     
-    
+
     """
     report_content += row_content
 
@@ -1301,7 +1305,7 @@ TOTAL SCHEDULES & DRAWALS FROM CENTRAL NETWORK INCLUDING CENTRAL GENERATING STAT
     report_content += row_content
     levelstoragedata = levelstoragedata.fillna(0)
     for i in range(levelstoragedata.shape[0]):
-      row_content = f"""    {levelstoragedata.iloc[i,1]:<13}|{levelstoragedata.iloc[i,2]:>8.2f} |{levelstoragedata.iloc[i,3]:>7.2f} |{levelstoragedata.iloc[i,4]:>8.2f} |{levelstoragedata.iloc[i,5]:>7.3f} |{levelstoragedata.iloc[i,6]:>6.2f} | {levelstoragedata.iloc[i,7]:>6.3f} | {levelstoragedata.iloc[i,8]:>4.0f} | {levelstoragedata.iloc[i,9]:>4.0f}
+      row_content = f"""    {levelstoragedata.iloc[i,1]:<13}|{levelstoragedata.iloc[i,2]:>8.2f} |{levelstoragedata.iloc[i,3]:>7.3f} |{levelstoragedata.iloc[i,4]:>8.2f} |{levelstoragedata.iloc[i,5]:>7.3f} |{levelstoragedata.iloc[i,6]:>6.2f} | {levelstoragedata.iloc[i,7]:>6.3f} | {levelstoragedata.iloc[i,8]:>4.0f} | {levelstoragedata.iloc[i,9]:>4.0f}
     ---------------------------------------------------------------------------------
 """
       report_content += row_content
@@ -1309,9 +1313,7 @@ TOTAL SCHEDULES & DRAWALS FROM CENTRAL NETWORK INCLUDING CENTRAL GENERATING STAT
 #    row_content = f"""    ===================================================================================
 #"""           
 #    report_content += row_content
-    row_content = f"""
-
-                              
+    row_content = f"""                      
     INFLOWS AND DISCHARGES
     
     {'Inflows in Cusecs @ 06:00 Hrs':^31}        {'Discharges in Cusecs (Avg)':^35}
@@ -1457,7 +1459,7 @@ def export_dailymu_to_text(request):
                 df_filtered.loc[df_filtered['GenStationID']==GenStationID]=df_station
             
             df=df_filtered.loc[df_filtered['GenStationID']==1]
-            print(list(df['Energy']))
+#            print(list(df['Energy']))
             df_report=pd.DataFrame(index=df_filtered['GenStationName'].unique(),columns=['InstalledCap']+[f'{cur_year}-{cur_month:02}-{x:02}' for x in range(1,yesterday.day+1)])
             for date in df_report.columns:
                 for gen in df_report.index:
@@ -1480,7 +1482,7 @@ def export_dailymu_to_text(request):
         report_genco=pd.concat([report_hydel,report_thermal],axis=0).reset_index()
         report_thermal['CapUtil']=report_thermal['CUM']*100000/report_thermal['InstalledCap']/24/yesterday.day
         report_thermal=report_thermal[list(report_thermal.columns[:-2])+[report_thermal.columns[-1],report_thermal.columns[-2]]]
-        print(list(report_thermal.columns[:-2])+[report_thermal.columns[-1],report_thermal.columns[-2]])
+#        print(list(report_thermal.columns[:-2])+[report_thermal.columns[-1],report_thermal.columns[-2]])
         report_lta=monthlyenergyreport(monthgendata,['LTA'])
         report_cgs=monthlyenergyreport(monthgendata,['Central Sector'])
         report_apisgs=monthlyenergyreport(monthgendata,['APISGS'])
@@ -1625,15 +1627,17 @@ def export_dailymu_to_text(request):
 
 
     report_content += f"""{addcontent(report_hydel)}"""
-
-    report_content += f"""{addcontent_series(report_hydel.sum(axis=0),'Total Hydel')}
+    series=report_hydel.sum(axis=0)
+#    print(series)
+#    series['%CapUtil']=series['CUM']*100000/series['InstalledCap']/24/yesterday.day
+    report_content += f"""{addcontent_series(series,'Total Hydel')}
 
 """
     report_content += f"""{addcontent_thermal(report_thermal)}"""
     s=report_thermal.sum(axis=0)
 
     try:
-        s[-1]=s[-3]*100000/s[1]/24/yesterday.day
+        s[-2]=s[-3]*100000/s[1]/24/yesterday.day
     except:
         s[-1]=np.nan
     report_content += f"""{addcontent_series_thermal(s,'Total Thermal')}
