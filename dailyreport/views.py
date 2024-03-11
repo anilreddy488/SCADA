@@ -6,7 +6,6 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import user_passes_test
 from .models import *
 from django.contrib.auth import logout
-from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 import os
 from django.http import HttpResponse
 from django.db.models import Sum
@@ -84,6 +83,8 @@ def import_data_from_excel(file_path):
         for index, row in df_schdrwldata.iterrows():
             state_id = row['StateID']
             date = row['Date']
+            if row['Exclude']==True:
+                continue
             # Try to get the existing record
             instance, created = SchDrwlData.objects.get_or_create(StateID=state_id, Date=date)
             # Update the fields
@@ -240,7 +241,11 @@ def export_to_text_fir(request):
                """
 
 
-
+    query_PrevLoadFactor = """
+               SELECT Energy 
+               FROM dailyreport_DemandData
+               WHERE Date=%(previous_year_day)s AND GenStationID=39
+               """
 
 
     query_gridfreq = """SELECT FreqMorning,FreqEvening,TimeMaxDemandMorning,TimeMaxDemandEvening
@@ -373,8 +378,14 @@ def export_to_text_fir(request):
         instance.GenType = 'Total'
         instance.save()
 
-        subindex=['i','ii','iii','iv','v','vi','vii','viii']
-        alphabets=['a','b','c','d','e','f','g']
+    with connection.cursor() as cursor:
+        cursor.execute(query_PrevLoadFactor, {'previous_year_day': previous_year_day})
+        PrevLoadFactor = cursor.fetchall()
+
+        cursor.close()
+        
+    subindex=['i','ii','iii','iv','v','vi','vii','viii']
+    alphabets=['a','b','c','d','e','f','g']
 
     
     
@@ -555,7 +566,7 @@ XI  TS DEMAND(EX-BUS) {gen_total_wo_pump["InstalledCap"]:<6.0f}{gen_total_wo_pum
     row_content = f"""
 
 
-XII  Load Factor      {'':<6}{'':>12}{'':>12}{load_factor:>16.3f}%  |{gen_data[gen_data['GenStationID']==39][['PrevEnergy']].iloc[0,0]:>8.3f}%
+XII  Load Factor      {'':<6}{'':>12}{'':>12}{load_factor:>16.3f}%  |{PrevLoadFactor[0][0]:>8.3f}%
 """
     report_content += row_content
 
@@ -574,46 +585,46 @@ XII  Load Factor      {'':<6}{'':>12}{'':>12}{load_factor:>16.3f}%  |{gen_data[g
 
 
 
-                  STATUS OF COAL SUPPLIES TO THERMAL STATIONS ON :  {yesterday.strftime('%d/%m/%Y')}
-    ===============================================================================
-     {'Station':<10}{'Op. Balance':^12}{'Receipts':^12}{'Consumption':^12}{'Balance':^12}{'Average coal':^15} 
-     {'':^10}{'(MTs)':^12}{'(MTs)':^12}{'(MTs)':^12}{'(MTs)':^12}{'required/day for':^15}
-     {'':^10}{'':^12}{'':^12}{'':^12}{'':^12}{'full Generation(MTs)':^15}
-    -------------------------------------------------------------------------------
+              STATUS OF COAL SUPPLIES TO THERMAL STATIONS ON :  {yesterday.strftime('%d/%m/%Y')}
+  ===============================================================================
+   {'Station':<10}{'Op. Balance':^12}{'Receipts':^12}{'Consumption':^12}{'Balance':^12}{'Average coal':^15} 
+   {'':^10}{'(MTs)':^12}{'(MTs)':^12}{'(MTs)':^12}{'(MTs)':^12}{'required/day for':^15}
+   {'':^10}{'':^12}{'':^12}{'':^12}{'':^12}{'full Generation(MTs)':^15}
+  -------------------------------------------------------------------------------
 """           
     report_content += row_content
 
 
     for i in range(coaldata.shape[0]):
       if coaldata.iloc[i,0]==4:
-          row_content = f"""    {coaldata.iloc[i,1]:<10}{coaldata.iloc[i,2]:>10}{coaldata.iloc[i,3]:>12}{coaldata.iloc[i,4]:>12}{coaldata.iloc[i,7]-coaldata.iloc[i+1,4]:>12}{coaldata.iloc[i,5]:>15}
+          row_content = f"""  {coaldata.iloc[i,1]:<10}{coaldata.iloc[i,2]:>10}{coaldata.iloc[i,3]:>12}{coaldata.iloc[i,4]:>12}{coaldata.iloc[i,7]-coaldata.iloc[i+1,4]:>12}{coaldata.iloc[i,5]:>15}
 """
       elif coaldata.iloc[i,0]==5:
-          row_content = f"""    {coaldata.iloc[i,1]:<10}{'':<10}{'':>12}{coaldata.iloc[i,4]:>12}{'':>12}{coaldata.iloc[i,5]:>15}
+          row_content = f"""  {coaldata.iloc[i,1]:<10}{'':<10}{'':>12}{coaldata.iloc[i,4]:>12}{'':>12}{coaldata.iloc[i,5]:>15}
 """
       else:
-          row_content = f"""    {coaldata.iloc[i,1]:<10}{coaldata.iloc[i,2]:>10}{coaldata.iloc[i,3]:>12}{coaldata.iloc[i,4]:12}{coaldata.iloc[i,7]:>12}{coaldata.iloc[i,5]:>15}
+          row_content = f"""  {coaldata.iloc[i,1]:<10}{coaldata.iloc[i,2]:>10}{coaldata.iloc[i,3]:>12}{coaldata.iloc[i,4]:12}{coaldata.iloc[i,7]:>12}{coaldata.iloc[i,5]:>15}
 """
       report_content += row_content
-    row_content = f"""    ===============================================================================
+    row_content = f"""  ===============================================================================
 """
     report_content += row_content
 
 
     row_content = f"""
 
-                                  COAL WAGONS POSITION
-    ===============================================================================
-     {'Station':<15}{'Op. Balance':^17}{'Receipts':^17}{'Consumption':^17}{'Balance':^17}
-    -------------------------------------------------------------------------------
+                                COAL WAGONS POSITION
+  ===============================================================================
+   {'Station':<15}{'Op. Balance':^17}{'Receipts':^17}{'Consumption':^17}{'Balance':^17}
+  -------------------------------------------------------------------------------
 """           
     report_content += row_content
 
     for i in range(wagondata.shape[0]):
-      row_content = f"""    {wagondata.iloc[i,1]:<12}{wagondata.iloc[i,2]:>13}{wagondata.iloc[i,3]:>17}{wagondata.iloc[i,4]:>17}{wagondata.iloc[i,5]:>17}
+      row_content = f"""  {wagondata.iloc[i,1]:<12}{wagondata.iloc[i,2]:>13}{wagondata.iloc[i,3]:>17}{wagondata.iloc[i,4]:>17}{wagondata.iloc[i,5]:>17}
 """
       report_content += row_content
-    row_content = f"""    ===============================================================================
+    row_content = f"""  ===============================================================================
 """
     report_content += row_content
     if gen_total_wo_pump["MorningPeak"]>gen_total_wo_pump["EveningPeak"]:
@@ -650,7 +661,7 @@ Solar Energy: {solar["Energy"].sum():.3f} MU.
 
 Max. City Demand: {maxcitysolardata.iloc[0,2]:.0f} MW @ {str(maxcitysolardata.iloc[0,3])[:5]} Hrs.
 
-Max. City temperature:       {chr(176)}C.
+Max. City temperature:       C.
 
 
         """
@@ -687,7 +698,7 @@ Solar Energy: {solar["Energy"].sum()} MU.
 
 Max. City Demand: {maxcitysolardata.iloc[0,2]:.0f} MW @ {str(maxcitysolardata.iloc[0,3])[:5]} Hrs.
 
-Max. City temperature:       {chr(176)}C.
+Max. City temperature:       C.
 
         """       
         
@@ -700,7 +711,7 @@ Max. City temperature:       {chr(176)}C.
 @login_required(login_url='login')
 def export_to_text(request):
     response = HttpResponse(content_type='text/plain')
-    response['Content-Disposition'] = 'attachment; filename="DailyReport.txt"'
+    response['Content-Disposition'] = 'attachment; filename="RPT.txt"'
     yesterday = datetime.datetime.strptime(request.GET['date'], '%Y-%m-%d').date()
     today = yesterday + relativedelta(days=1)
     yesterday_str = f'{yesterday.year}-{yesterday.month:02}-{yesterday.day:02}'
@@ -739,6 +750,14 @@ def export_to_text(request):
                FROM dailyreport_DemandData
                WHERE Date=%(previous_year_day)s AND GenStationID=36
                """
+
+
+    query_PrevLoadFactor = """
+               SELECT Energy 
+               FROM dailyreport_DemandData
+               WHERE Date=%(previous_year_day)s AND GenStationID=39
+               """
+
 
     query_monthdataTSDemand = """
                SELECT MorningPeak, EveningPeak, Energy, Date
@@ -1007,8 +1026,14 @@ def export_to_text(request):
         instance.GenType = 'Total'
         instance.save()
 
-        subindex=['i','ii','iii','iv','v','vi','vii','viii']
-        alphabets=['a','b','c','d','e','f','g']
+    with connection.cursor() as cursor:
+        cursor.execute(query_PrevLoadFactor, {'previous_year_day': previous_year_day})
+        PrevLoadFactor = cursor.fetchall()
+
+        cursor.close()
+
+    subindex=['i','ii','iii','iv','v','vi','vii','viii']
+    alphabets=['a','b','c','d','e','f','g']
 
     
     # Create the report content as a string
@@ -1186,7 +1211,7 @@ XI  TS DEMAND(EX-BUS) {gen_total_wo_pump["InstalledCap"]:<6.0f}{gen_total_wo_pum
     row_content = f"""
 
 
-XII  Load Factor      {'':<6}{'':>12}{'':>12}{load_factor:>16.3f}%  |{gen_data[gen_data['GenStationID']==39][['PrevEnergy']].iloc[0,0]:>8.3f}%
+XII  Load Factor      {'':<6}{'':>12}{'':>12}{load_factor:>16.3f}%  |{PrevLoadFactor[0][0]:>8.3f}%
 """
     report_content += row_content
 
@@ -1298,7 +1323,7 @@ TOTAL SCHEDULES & DRAWALS FROM CENTRAL NETWORK INCLUDING CENTRAL GENERATING STAT
   {'Inflows in Cusecs @ 06:00 Hrs':^31}        {'Discharges in Cusecs (Avg)':^35}
   ============================           ====================(00 to 24)   (06 to 06)
   1. {'U_JURALA':<19}{inflowsdischargedata.iloc[0,5]:>6}         {'1.':>4}{'U_JURALA':<19}{dis_ujurala.iloc[0,4]:>6}{dis_ujurala.iloc[0,5]:>13}
-      {'':<19}{'':>6}         {'':>4}{'L_JURALA':<19}{dis_ljurala.iloc[0,5]:>6}
+     {'':<19}{'':>6}         {'':>4}{'L_JURALA':<19}{dis_ljurala.iloc[0,5]:>6}
 
   2. {'SRISAILAM':<21}{'':>6}       {'2.':>4}{'SRISAILAM':<20}
       {inf_srisailam.iloc[0,1]:<18}{inf_srisailam.iloc[0,5]:>6}         {'':>5}{dis_srisailam.iloc[0,1]:<18}{dis_srisailam.iloc[0,4]:>6}{dis_srisailam.iloc[0,5]:>13}
@@ -1714,7 +1739,7 @@ STATE PURCHASES:
 #    print(report_maxcitysolartime)
     report_maxcitysolardemand.set_index('index',inplace=True)
     report_maxcitysolartime.loc['CITY MAX DEMAND  MET','MAX']=report_maxcitysolartime.loc['CITY MAX DEMAND  MET',report_maxcitysolardemand.reset_index().drop(['CUM','index','MAX','AVG'],axis=1).astype(float).idxmax(axis=1,skipna=True)[0]]
-    report_maxcitysolartime.loc['SOLAR MAX DEMAND  MET','MAX']=report_maxcitysolartime.loc['CITY MAX DEMAND  MET',report_maxcitysolardemand.reset_index().drop(['CUM','index','MAX','AVG'],axis=1).astype(float).idxmax(axis=1,skipna=True)[1]]
+    report_maxcitysolartime.loc['SOLAR MAX DEMAND MET','MAX']=report_maxcitysolartime.loc['SOLAR MAX DEMAND MET',report_maxcitysolardemand.reset_index().drop(['CUM','index','MAX','AVG'],axis=1).astype(float).idxmax(axis=1,skipna=True)[1]]
 #    print(report_maxcitysolartime)
 
 #    report_content += f"""{addcontent1(report_maxcitysolartime)}
@@ -1755,7 +1780,7 @@ STATE PURCHASES:
 """
     report_content += f"""{addcontent_series3(report_maxcitysolardemand.iloc[1])}
 """
-    report_content += f"""{addcontent_series4(report_maxcitysolartime.iloc[1])}
+    report_content += f"""{addcontent_series4(report_maxcitysolartime.iloc[1],)}
 """
     report_content += f"""{'-'*(24+6+8+8+8+6*yesterday.day)}
 """
