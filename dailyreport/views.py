@@ -33,7 +33,7 @@ def import_data_from_excel(file_path):
         df_coalparticulars = pd.read_excel(file_path, sheet_name='CoalParticulars')
         df_wagonparticulars = pd.read_excel(file_path, sheet_name='WagonParticulars')
         df_maxcitysolar = pd.read_excel(file_path, sheet_name='MaxDemandCityandSolar')
-        print(df_demanddata)
+        #print(df_demanddata)
 
         # Loop through the rows and update existing model instances or create new ones
         for index, row in df_demanddata.iterrows():
@@ -651,7 +651,7 @@ NSR PUMP Consumption- {pump.iloc[1,3]:.0f} MW, {pump.iloc[1,5]:.3f} MU;
 
 Total consumption: {gen_total_wo_pump["Energy"]:.3f} MU;
 
-Max. Demand met: {gen_total_wo_pump["MorningPeak"]:.0f} MW @ {gridfreq_data.iloc[0,2].strftime('%H:%M')}Hrs (Including Solar & NSR Pumps)
+Max. Demand met: {gen_total["MorningPeak"]:.0f} MW @ {gridfreq_data.iloc[0,2].strftime('%H:%M')}Hrs (Including Solar & NSR Pumps)
 
 Min. Demand met: {maxcitysolardata.iloc[2,2]:.0f} MW @ {str(maxcitysolardata.iloc[2,3])[:5]} Hrs.
 
@@ -688,7 +688,7 @@ NSR PUMP Consumption- {pump.iloc[1,4]:.0f} MW, {pump.iloc[1,5]:.3f} MU;
 
 Total consumption: {gen_total_wo_pump["Energy"]:.3f} MU;
 
-Max. Demand met: {gen_total_wo_pump["EveningPeak"]:.0f} MW @ {gridfreq_data.iloc[0,3].strftime('%H:%M')}Hrs (Including Solar & NSR Pumps)
+Max. Demand met: {gen_total["EveningPeak"]:.0f} MW @ {gridfreq_data.iloc[0,3].strftime('%H:%M')}Hrs (Including Solar & NSR Pumps)
 
 Min. Demand met: {maxcitysolardata.iloc[2,2]:.0f} MW @ {str(maxcitysolardata.iloc[2,3])[:5]} Hrs.
 
@@ -759,11 +759,11 @@ def export_to_text(request):
                """
 
 
-    query_monthdataTSDemand = """
-               SELECT MorningPeak, EveningPeak, Energy, Date
-               FROM dailyreport_DemandData
-               WHERE (Date BETWEEN %(monthstartday)s AND %(yesterday)s) AND GenStationID=36
-               """
+#    query_monthdataTSDemand = """
+#               SELECT MorningPeak, EveningPeak, Energy, Date
+#              FROM dailyreport_DemandData
+#               WHERE (Date BETWEEN %(monthstartday)s AND %(yesterday)s) AND GenStationID=36
+#              """
 
 
     query_TsdemandMonthCum = """
@@ -890,8 +890,8 @@ def export_to_text(request):
         cursor.execute(query_PrevTSDemand, {'previous_year_day': previous_year_day})
         PrevTSDemand = cursor.fetchall()
 
-        cursor.execute(query_monthdataTSDemand, {'yesterday': yesterday, 'monthstartday': monthstartday})
-        tsdemand_monthdata = cursor.fetchall()
+#        cursor.execute(query_monthdataTSDemand, {'yesterday': yesterday, 'monthstartday': monthstartday})
+#        tsdemand_monthdata = cursor.fetchall()
 
         cursor.execute(query_TsdemandMonthCum, {'yesterday': yesterday, 'monthstartday': monthstartday})
         tsdemand_monthcum = cursor.fetchall()
@@ -928,8 +928,8 @@ def export_to_text(request):
 
         gen_data=pd.DataFrame(gen_data,columns=['GenStationName', 'GenType', 'InstalledCap', 'MorningPeak', 'EveningPeak', 'Energy' ,'PrevEnergy','GenStationID'])
 
-        tsdemand_monthdata=pd.DataFrame(tsdemand_monthdata,columns=['MorningPeak', 'EveningPeak', 'Energy', 'Date'])
-        tsdemand_monthdata['MaxTSDemand']=tsdemand_monthdata[['MorningPeak', 'EveningPeak']].max(axis=1)
+#        tsdemand_monthdata=pd.DataFrame(tsdemand_monthdata,columns=['MorningPeak', 'EveningPeak', 'Energy', 'Date'])
+#        tsdemand_monthdata['MaxTSDemand']=tsdemand_monthdata[['MorningPeak', 'EveningPeak']].max(axis=1)
 
         gridfreq_data=pd.DataFrame(gridfreq_data,columns=['FreqMorning','FreqEvening','TimeMaxDemandMorning','TimeMaxDemandEvening'])
 
@@ -1389,15 +1389,15 @@ def export_dailymu_to_text(request):
     query_monthdataTSDemand = """
                SELECT MorningPeak, EveningPeak, Energy, Date
                FROM dailyreport_DemandData
-               WHERE Date BETWEEN %(monthstartday)s AND %(yesterday)s AND GenStationID=36
+               WHERE Date BETWEEN %(monthstartday)s AND %(yesterday)s AND GenStationID=53
                """
 
-
-    query_TsdemandMonthCum = """
-               SELECT SUM(Energy) 
+    query_monthdataTSDemandmu = """
+               SELECT MorningPeak, EveningPeak, Energy, Date
                FROM dailyreport_DemandData
                WHERE Date BETWEEN %(monthstartday)s AND %(yesterday)s AND GenStationID=36
                """
+
 
 
     query_month_gendata = f"""WITH month_data AS
@@ -1425,11 +1425,8 @@ def export_dailymu_to_text(request):
         cursor.execute(query_monthdataTSDemand, {'yesterday': yesterday, 'monthstartday': monthstartday})
         tsdemand_monthdata = cursor.fetchall()
 
-        cursor.execute(query_TsdemandMonthCum, {'yesterday': yesterday, 'monthstartday': monthstartday})
-        tsdemand_monthcum = cursor.fetchall()
-        
-
-
+        cursor.execute(query_monthdataTSDemandmu, {'yesterday': yesterday, 'monthstartday': monthstartday})
+        tsdemandmu_monthdata = cursor.fetchall()
 
         cursor.execute(query_month_gendata,{'cur_year':cur_year,'cur_month':cur_month})
         monthgendata = cursor.fetchall()
@@ -1444,6 +1441,7 @@ def export_dailymu_to_text(request):
         tsdemand_monthdata=pd.DataFrame(tsdemand_monthdata,columns=['MorningPeak', 'EveningPeak', 'Energy', 'Date'])
         tsdemand_monthdata['MaxTSDemand']=tsdemand_monthdata[['MorningPeak', 'EveningPeak']].max(axis=1)
 
+        tsdemandmu_monthdata=pd.DataFrame(tsdemandmu_monthdata,columns=['MorningPeak', 'EveningPeak', 'Energy', 'Date'])
 
         monthgendata = pd.DataFrame(monthgendata,columns=['GenStationID', 'GenStationName', 'GenType', 'InstalledCap', 'Energy', 'Date'])
 
@@ -1683,12 +1681,12 @@ STATE PURCHASES:
 """
 
     report_content += f"""{'TS DEMAND (MU)':<29}"""
-    for i in range(tsdemand_monthdata['Energy'].shape[0]):
-        row_content = f"""{tsdemand_monthdata['Energy'][i]:>6.1f}"""
+    for i in range(tsdemandmu_monthdata['Energy'].shape[0]):
+        row_content = f"""{tsdemandmu_monthdata['Energy'][i]:>6.1f}"""
         report_content += row_content
-    report_content+=f"""{tsdemand_monthdata['Energy'].sum():>9.3f}"""
-    report_content+=f"""{tsdemand_monthdata['Energy'].max():>9.3f}"""
-    report_content+=f"""{tsdemand_monthdata['Energy'].mean():>7.2f}"""
+    report_content+=f"""{tsdemandmu_monthdata['Energy'].sum():>9.3f}"""
+    report_content+=f"""{tsdemandmu_monthdata['Energy'].max():>9.3f}"""
+    report_content+=f"""{tsdemandmu_monthdata['Energy'].mean():>7.2f}"""
 
     report_content += f"""
 {'TS DEMAND (MW)':<29}"""
@@ -1789,206 +1787,3 @@ STATE PURCHASES:
     response.write(report_content)
 
     return response
-
-
-
-
-
-
-#    def addcontent(df):
-#        report_content=''
-#        df.reset_index(inplace=True)
-#        for i in range(df.shape[0]):
-#            for j in range(df.shape[1]):
-#                if j == 0:
-#                    row_content = f"""{df.iloc[i,j]:<21}"""
-#                else:
-#                    if j==1:
-#                        if type(df.iloc[i,j])==str:
-#                            row_content = f"""{df.iloc[i,j]:>8}"""
-#                        else:
-#                            row_content = f"""{df.iloc[i,j]:>8.0f}"""
-#                    elif j == (df.shape[1]-2):
-#                        if type(df.iloc[i,j])==str:
-#                            row_content = f"""{df.iloc[i,j]:>8}"""
-#                        else:
-#                            row_content = f"""{df.iloc[i,j]:>9.3f}"""
-#                    elif j > (df.shape[1]-2):
-#                        if type(df.iloc[i,j])==str:
-#                            row_content = f"""{df.iloc[i,j]:>8}"""
-#                        else:
-#                            row_content = f"""{df.iloc[i,j]:>9.2f}"""
-#                    else:
-#                        if type(df.iloc[i,j])==str:
-#                            row_content = f"""{df.iloc[i,j]:>6}"""
-#                        else:
-#                            row_content = f"""{df.iloc[i,j]:>6.2f}"""
-#                report_content += row_content
-#
-#            report_content += """
-#""" 
-
-#        return report_content
-
-#    def addcontent_private(df):
-#        report_content=''
-#        df.reset_index(inplace=True)
-#        for i in range(df.shape[0]):
-#            for j in range(df.shape[1]):
-#                if j == 0:
-#                    row_content = f"""{df.iloc[i,j]:<21}"""
-#                else:
-#                    if j==1:
-#                        if type(df.iloc[i,j])==str:
-#                            row_content = f"""{df.iloc[i,j]:>8}"""
-#                        else:
-#                            row_content = f"""{df.iloc[i,j]:>8.2f}"""
-#                    elif j == (df.shape[1]-2):
-#                        if type(df.iloc[i,j])==str:
-#                            row_content = f"""{df.iloc[i,j]:>8}"""
-#                        else:
-#                            row_content = f"""{df.iloc[i,j]:>9.3f}"""
-#                    elif j > (df.shape[1]-2):
-#                        if type(df.iloc[i,j])==str:
-#                            row_content = f"""{df.iloc[i,j]:>8}"""
-#                        else:
-#                            row_content = f"""{df.iloc[i,j]:>9.2f}"""
-#                    else:
-#                        if type(df.iloc[i,j])==str:
-#                            row_content = f"""{df.iloc[i,j]:>6}"""
-#                        else:
-#                            row_content = f"""{df.iloc[i,j]:>6.2f}"""
-#                report_content += row_content
-
-#            report_content += """
-#""" 
-
-#        return report_content
-
-#    def addcontent_statepur(df):
-#        report_content=''
-#        df.reset_index(inplace=True)
-#        for i in range(df.shape[0]):
-#            for j in range(df.shape[1]):
-#                if j == 0:
-#                    row_content = f"""{df.iloc[i,j]:<27}"""
-#                else:
-#                    if j==1:
-#                        if type(df.iloc[i,j])==str:
-#                            row_content = f"""{df.iloc[i,j]:>2}"""
-#                        else:
-#                            row_content = f"""{df.iloc[i,j]:>8.0f}"""
-#                    elif j == (df.shape[1]-2):
-#                        if type(df.iloc[i,j])==str:
-#                            row_content = f"""{df.iloc[i,j]:>8}"""
-#                        else:
-#                            row_content = f"""{df.iloc[i,j]:>9.3f}"""
-#                    elif j > (df.shape[1]-3):
-#                        if type(df.iloc[i,j])==str:
-#                            row_content = f"""{df.iloc[i,j]:>8}"""
-#                        else:
-#                            row_content = f"""{df.iloc[i,j]:>9.2f}"""
-#                    else:
-#                        if type(df.iloc[i,j])==str:
-#                            row_content = f"""{df.iloc[i,j]:>6}"""
-#                        else:
-#                            row_content = f"""{df.iloc[i,j]:>6.2f}"""
-#                report_content += row_content
-
-#            report_content += """
-#""" 
-
-#        return report_content
-
-
-
-#    def addcontent_thermal(df):
-#        report_content=''
-#        df.reset_index(inplace=True)
-#        for i in range(df.shape[0]):
-#            for j in range(df.shape[1]):
-#                if j == 0:
-#                    row_content = f"""{df.iloc[i,j]:<21}"""
-#               else:
-#                    if j==1:
-#                        if type(df.iloc[i,j])==str:
-#                            row_content = f"""{df.iloc[i,j]:>8}"""
-#                        else:
-#                            row_content = f"""{df.iloc[i,j]:>8.0f}"""
-#                    elif j == (df.shape[1]-3):
-#                        if type(df.iloc[i,j])==str:
-#                            row_content = f"""{df.iloc[i,j]:>8}"""
-#                        else:
-#                            row_content = f"""{df.iloc[i,j]:>9.3f}"""
-#                    elif j > (df.shape[1]-3):
-#                        if type(df.iloc[i,j])==str:
-#                            row_content = f"""{df.iloc[i,j]:>8}"""
-#                        else:
-#                            row_content = f"""{df.iloc[i,j]:>9.2f}"""
-#                    else:
-#                        if type(df.iloc[i,j])==str:
-#                            row_content = f"""{df.iloc[i,j]:>6}"""
-#                        else:
-#                            row_content = f"""{df.iloc[i,j]:>6.2f}"""
-#                report_content += row_content
-#
-#            report_content += """
-#""" 
-
-#        return report_content
-
-
-#    def addcontent1(df):
-#        report_content=''
-#        df.reset_index(inplace=True)
-#        for i in range(df.shape[0]):
-#            for j in range(df.shape[1]):
-#                if j == 0:
-#                    row_content = f"""{df.iloc[i,j]:<27}"""
-#                else:
-#                    if j==1:
-#                        if type(df.iloc[i,j])==str:
-#                            row_content = f"""{df.iloc[i,j]:>8}"""
-#                        else:
-#                            row_content = f"""{df.iloc[i,j]:>8.0f}"""
-#                    elif j > (df.shape[1]-3):
-#                        if type(df.iloc[i,j])==str:
-#                            row_content = f"""{df.iloc[i,j]:>9}"""
-#                        else:
-#                            row_content = f"""{df.iloc[i,j]:>9.0f}"""
-#                    else:
-#                        if type(df.iloc[i,j])==str:
-#                            row_content = f"""{df.iloc[i,j]:>6}"""
-#                        else:
-#                            row_content = f"""{df.iloc[i,j]:>6.0f}"""
-##                report_content += row_content
-##            report_content += """
-##""" 
-#        return report_content
-
-
-    #def addcontent_series4(s,text):
-
-    #    report_content=''
-    #    for i in s.index[:-1]:
-    #        if i=='index':
-    #            row_content = f"""{text:<29}"""
-    #        else:
-    #            if type(s[i])==str:
-    #                row_content = f"""{s[i]:>6}"""
-    #            else:
-    #                row_content = f"""{s[i]:>6.0f}"""
-    #        report_content+=row_content
-    #    if type(s[i])==str:
-    #        row_content = f"""{s[-1]:>15}"""
-    #    else:
-    #        row_content = f"""{s[-1]:>20.2f}"""
-    #    report_content+=row_content
-    #    return report_content
-
-
-
-
-
-
-
