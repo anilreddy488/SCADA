@@ -16,161 +16,173 @@ import pandas as pd
 import numpy as np
 from .admin import DemandDataResource  # Import your resource class
 from tablib import Dataset
-
+import openpyxl
 
 
 
 def import_data_from_excel(file_path):
+    print(openpyxl.load_workbook(file_path).sheetnames)
     try:
         # Read the Excel file using pandas
-        df_demanddata = pd.read_excel(file_path, sheet_name='DemandData')
-        df_gridfreq = pd.read_excel(file_path, sheet_name='GridFreq')
-        df_schdrwldata = pd.read_excel(file_path, sheet_name='SchDrwlData')
-        df_centralsectordata = pd.read_excel(file_path, sheet_name='CentralSectorData')
-        df_levelstoragedata = pd.read_excel(file_path, sheet_name='LevelStorageData')
-        df_inflowdischarge = pd.read_excel(file_path, sheet_name='InflowDischarge')
-        df_weather = pd.read_excel(file_path, sheet_name='WeatherandOtherParameters')
-        df_coalparticulars = pd.read_excel(file_path, sheet_name='CoalParticulars')
-        df_wagonparticulars = pd.read_excel(file_path, sheet_name='WagonParticulars')
-        df_maxcitysolar = pd.read_excel(file_path, sheet_name='MaxDemandCityandSolar')
-        #print(df_demanddata)
 
         # Loop through the rows and update existing model instances or create new ones
-        for index, row in df_demanddata.iterrows():
-            gen_station_id = row['GenStationID']
-            date = row['Date']
+        if 'DemandData' in openpyxl.load_workbook(file_path).sheetnames:
+            df_demanddata = pd.read_excel(file_path, sheet_name='DemandData')
+            for index, row in df_demanddata.iterrows():
+                gen_station_id = row['GenStationID']
+                date = row['Date']
             
-            # Check if the record exists, and create it if not
-            instance, created = DemandData.objects.get_or_create(GenStationID=gen_station_id, Date=date)
+                # Check if the record exists, and create it if not
+                instance, created = DemandData.objects.get_or_create(GenStationID=gen_station_id, Date=date)
             
-            # Update the fields
-            instance.GenStationName = row['GenStationName']
-            instance.GenType = row['GenType']
-            instance.InstalledCap = row['InstalledCap']
-            instance.MorningPeak = row['MorningPeak']
-            instance.EveningPeak = row['EveningPeak']
-            instance.Energy = row['Energy']
-            instance.save()
-        print('Uploaded Demand data')
+                # Update the fields
+                instance.GenStationName = row['GenStationName']
+                instance.GenType = row['GenType']
+                instance.InstalledCap = row['InstalledCap']
+                instance.MorningPeak = row['MorningPeak']
+                instance.EveningPeak = row['EveningPeak']
+                instance.Energy = row['Energy']
+                instance.save()
+            print('Uploaded Demand data')
 
-        for index, row in df_maxcitysolar.iterrows():
-            pid = row['PID']
-            date = row['Date']
+        if 'MaxDemandCityandSolar' in openpyxl.load_workbook(file_path).sheetnames:
+            df_maxcitysolar = pd.read_excel(file_path, sheet_name='MaxDemandCityandSolar')
+            for index, row in df_maxcitysolar.iterrows():
+                pid = row['PID']
+                date = row['Date']
             
-            # Check if the record exists, and create it if not
-            instance, created = MaxCitySolar.objects.get_or_create(PID=pid, Date=date)
+                # Check if the record exists, and create it if not
+                instance, created = MaxCitySolar.objects.get_or_create(PID=pid, Date=date)
             
-            # Update the fields
-            instance.Name = row['Name']
-            instance.MaxDemand = row['MaxDemand']
-            instance.Time = row['Time']
-            instance.save()
-        print('Uploaded City and Solar Max data')
+                # Update the fields
+                instance.Name = row['Name']
+                instance.MaxDemand = row['MaxDemand']
+                instance.Time = row['Time']
+                instance.save()
+            print('Uploaded City and Solar Max data')
 
-        for index, row in df_gridfreq.iterrows():
-            date = row['Date']
+        if 'GridFreq' in openpyxl.load_workbook(file_path).sheetnames:
+            df_gridfreq = pd.read_excel(file_path, sheet_name='GridFreq')
+            for index, row in df_gridfreq.iterrows():
+                date = row['Date']
             
-            # Check if the record exists, and create it if not
-            instance, created = GridFreq.objects.get_or_create(Date=date)
-            # Update the fields
-            instance.FreqMorning = row['MorningFreq']
-            instance.FreqEvening = row['EveningFreq']
-            instance.TimeMaxDemandMorning = row['MoringMaxTime']
-            instance.TimeMaxDemandEvening = row['EveningMaxTime']
-            instance.save()
-        print('Uploaded Grid Frequency data')
+                # Check if the record exists, and create it if not
+                instance, created = GridFreq.objects.get_or_create(Date=date)
+                # Update the fields
+                instance.FreqMorning = row['MorningFreq']
+                instance.FreqEvening = row['EveningFreq']
+                instance.TimeMaxDemandMorning = row['MoringMaxTime']
+                instance.TimeMaxDemandEvening = row['EveningMaxTime']
+                instance.save()
+            print('Uploaded Grid Frequency data')
 
-        for index, row in df_schdrwldata.iterrows():
-            state_id = row['StateID']
-            date = row['Date']
-            if row['Exclude']==True:
-                continue
-            # Try to get the existing record
-            instance, created = SchDrwlData.objects.get_or_create(StateID=state_id, Date=date)
-            # Update the fields
-            instance.StateName = row['StateName']
-            instance.Schedule = row['Schedule']
-            instance.Drawl = row['Drawl']
-            instance.save()
-        print('Uploaded Schedule Drawl data')
+        if 'SchDrwlData' in openpyxl.load_workbook(file_path).sheetnames:
+            df_schdrwldata = pd.read_excel(file_path, sheet_name='SchDrwlData')
+            for index, row in df_schdrwldata.iterrows():
+                state_id = row['StateID']
+                date = row['Date']
+                if row['Exclude']==True:
+                    continue
+                # Try to get the existing record
+                instance, created = SchDrwlData.objects.get_or_create(StateID=state_id, Date=date)
+                # Update the fields
+                instance.StateName = row['StateName']
+                instance.Schedule = row['Schedule']
+                instance.Drawl = row['Drawl']
+                instance.save()
+            print('Uploaded Schedule Drawl data')
 
-        for index, row in df_centralsectordata.iterrows():
-            central_station_id = row['CentralStationID']
-            date = row['Date']
-            if row['Exclude']==True:
-                continue
-            # Check if the record exists, and create it if not
-            instance, created = CentralSectorData.objects.get_or_create(CentralStationID=central_station_id, Date=date)
-            # Update the fields
-            instance.CenStationName = row['CenStationName']
-            instance.Energy = row['Energy']
-            instance.save()
-        print('Uploaded Central Sector data')
+        if 'CentralSectorData' in openpyxl.load_workbook(file_path).sheetnames:
+            df_centralsectordata = pd.read_excel(file_path, sheet_name='CentralSectorData')
+            for index, row in df_centralsectordata.iterrows():
+                central_station_id = row['CentralStationID']
+                date = row['Date']
+                if row['Exclude']==True:
+                    continue
+                # Check if the record exists, and create it if not
+                instance, created = CentralSectorData.objects.get_or_create(CentralStationID=central_station_id, Date=date)
+                # Update the fields
+                instance.CenStationName = row['CenStationName']
+                instance.Energy = row['Energy']
+                instance.save()
+            print('Uploaded Central Sector data')
 
-        for index, row in df_levelstoragedata.iterrows():
-            dam_id = row['DamID']
-            date = row['Date']
-            # Check if the record exists, and create it if not
-            instance, created = LevelStorageData.objects.get_or_create(DamID=dam_id, Date=date)
-            # Update the fields
-            instance.DamName = row['DamName']
-            instance.Level = row['Level']
-            instance.save()
-        print('Uploaded Level Storage data')
+        if 'LevelStorageData' in openpyxl.load_workbook(file_path).sheetnames:
+            df_levelstoragedata = pd.read_excel(file_path, sheet_name='LevelStorageData')
+            for index, row in df_levelstoragedata.iterrows():
+                dam_id = row['DamID']
+                date = row['Date']
+                # Check if the record exists, and create it if not
+                instance, created = LevelStorageData.objects.get_or_create(DamID=dam_id, Date=date)
+                # Update the fields
+                instance.DamName = row['DamName']
+                instance.Level = row['Level']
+                instance.save()
+            print('Uploaded Level Storage data')
 
-        for index, row in df_inflowdischarge.iterrows():
-            reservoir_id = row['ReservoirID']
-            date = row['Date']
-            # Check if the record exists, and create it if not
-            instance, created = InflowsDischarge.objects.get_or_create(ReservoirID=reservoir_id, Date=date)
-            # Update the fields
-            instance.Type = row['Type']
-            instance.Name = row['Name']
-            instance.DamName = row['DamName']
-            instance.InfDis00to24 = row['InfDis00to24']
-            instance.InfDis06to06 = row['InfDis06to06']
-            instance.save()
-        print('Uploaded Inflow Discharge data')
+        if 'InflowDischarge' in openpyxl.load_workbook(file_path).sheetnames:
+            df_inflowdischarge = pd.read_excel(file_path, sheet_name='InflowDischarge')
+            for index, row in df_inflowdischarge.iterrows():
+                reservoir_id = row['ReservoirID']
+                date = row['Date']
+                # Check if the record exists, and create it if not
+                instance, created = InflowsDischarge.objects.get_or_create(ReservoirID=reservoir_id, Date=date)
+                # Update the fields
+                instance.Type = row['Type']
+                instance.Name = row['Name']
+                instance.DamName = row['DamName']
+                instance.InfDis00to24 = row['InfDis00to24']
+                instance.InfDis06to06 = row['InfDis06to06']
+                instance.save()
+            print('Uploaded Inflow Discharge data')
 
-        for index, row in df_weather.iterrows():
-            weather_id = row['WID']
-            date = row['Date']
-            # Check if the record exists, and create it if not
-            instance, created = WeatherandOtherParameters.objects.get_or_create(WID=weather_id, Date=date)
-            # Update the fields
-            instance.Type = row['Type']
-            instance.Name = row['Name']
-            instance.Value = row['Value']
-            instance.save()
-        print('Uploaded Weather data')
 
-        for index, row in df_coalparticulars.iterrows():
-            genstation_id = row['GenStationID']
-            date = row['Date']
-            # Check if the record exists, and create it if not
-            instance, created = CoalParticulars.objects.get_or_create(GenStationID=genstation_id, Date=date)
-            # Update the fields
-            instance.GenStationName = row['GenStationName']
-            instance.OpenBal = row['OpenBal']
-            instance.Receipts = row['Receipts']
-            instance.Consumption = row['Consumption']
-            instance.AvgCoalperDay = row['AvgCoalperDay']
-            instance.save()
-        print('Uploaded Coal data')
+        if 'WeatherandOtherParameters' in openpyxl.load_workbook(file_path).sheetnames:
+            df_weather = pd.read_excel(file_path, sheet_name='WeatherandOtherParameters')
+            for index, row in df_weather.iterrows():
+                weather_id = row['WID']
+                date = row['Date']
+                # Check if the record exists, and create it if not
+                instance, created = WeatherandOtherParameters.objects.get_or_create(WID=weather_id, Date=date)
+                # Update the fields
+                instance.Type = row['Type']
+                instance.Name = row['Name']
+                instance.Value = row['Value']
+                instance.save()
+            print('Uploaded Weather data')
 
-        for index, row in df_wagonparticulars.iterrows():
-            genstation_id = row['GenStationID']
-            date = row['Date']
-            # Check if the record exists, and create it if not
-            instance, created = WagonParticulars.objects.get_or_create(GenStationID=genstation_id, Date=date)
-            # Update the fields
-            instance.GenStationName = row['GenStationName']
-            instance.OpenBal = row['OpenBal']
-            instance.Receipts = row['Receipts']
-            instance.Tippled = row['Tippled']
-            instance.Pending = row['Pending']
-            instance.save()
-        print('Uploaded Wagon data')
+        if 'CoalParticulars' in openpyxl.load_workbook(file_path).sheetnames:
+            df_coalparticulars = pd.read_excel(file_path, sheet_name='CoalParticulars')
+            for index, row in df_coalparticulars.iterrows():
+                genstation_id = row['GenStationID']
+                date = row['Date']
+                # Check if the record exists, and create it if not
+                instance, created = CoalParticulars.objects.get_or_create(GenStationID=genstation_id, Date=date)
+                # Update the fields
+                instance.GenStationName = row['GenStationName']
+                instance.OpenBal = row['OpenBal']
+                instance.Receipts = row['Receipts']
+                instance.Consumption = row['Consumption']
+                instance.AvgCoalperDay = row['AvgCoalperDay']
+                instance.save()
+            print('Uploaded Coal data')
+
+
+        if 'WagonParticulars' in openpyxl.load_workbook(file_path).sheetnames:
+            df_wagonparticulars = pd.read_excel(file_path, sheet_name='WagonParticulars')
+            for index, row in df_wagonparticulars.iterrows():
+                genstation_id = row['GenStationID']
+                date = row['Date']
+                # Check if the record exists, and create it if not
+                instance, created = WagonParticulars.objects.get_or_create(GenStationID=genstation_id, Date=date)
+                # Update the fields
+                instance.GenStationName = row['GenStationName']
+                instance.OpenBal = row['OpenBal']
+                instance.Receipts = row['Receipts']
+                instance.Tippled = row['Tippled']
+                instance.Pending = row['Pending']
+                instance.save()
+            print('Uploaded Wagon data')
 
         return True, None  # Success
     except Exception as e:
@@ -1720,28 +1732,18 @@ STATE PURCHASES:
             except:
                 pass
 
-
     report_maxcitysolardemand['CUM']=' '
     report_maxcitysolardemand['MAX']=report_maxcitysolardemand.drop(['CUM'],axis=1).max(axis=1,skipna=True)
     report_maxcitysolardemand['AVG']=' '
-
-    report_maxcitysolardemand['MAX']=report_maxcitysolardemand['MAX'].astype(int)
-    #print(report_maxcitysolardemand)
-#    report_content += f"""{addcontent1(report_maxcitysolardemand)}"""
 
 
     report_maxcitysolartime['CUM']=' '
     report_maxcitysolartime['MAX']=' '
     report_maxcitysolartime['AVG']=' '
     report_maxcitysolardemand.reset_index(inplace=True)
-#    print(report_maxcitysolartime)
     report_maxcitysolardemand.set_index('index',inplace=True)
     report_maxcitysolartime.loc['CITY MAX DEMAND  MET','MAX']=report_maxcitysolartime.loc['CITY MAX DEMAND  MET',report_maxcitysolardemand.reset_index().drop(['CUM','index','MAX','AVG'],axis=1).astype(float).idxmax(axis=1,skipna=True)[0]]
     report_maxcitysolartime.loc['SOLAR MAX DEMAND MET','MAX']=report_maxcitysolartime.loc['SOLAR MAX DEMAND MET',report_maxcitysolardemand.reset_index().drop(['CUM','index','MAX','AVG'],axis=1).astype(float).idxmax(axis=1,skipna=True)[1]]
-#    print(report_maxcitysolartime)
-
-#    report_content += f"""{addcontent1(report_maxcitysolartime)}
-#"""
     report_maxcitysolartime.reset_index(inplace=True)
     report_maxcitysolardemand.reset_index(inplace=True)
 
