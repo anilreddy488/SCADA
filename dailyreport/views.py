@@ -50,7 +50,7 @@ def import_data_from_excel(file_path):
             for index, row in df_maxcitysolar.iterrows():
                 pid = row['PID']
                 date = row['Date']
-            
+                #print('***********************',pid,date)
                 # Check if the record exists, and create it if not
                 instance, created = MaxCitySolar.objects.get_or_create(PID=pid, Date=date)
             
@@ -1291,7 +1291,7 @@ TOTAL SCHEDULES & DRAWALS FROM CENTRAL NETWORK INCLUDING CENTRAL GENERATING STAT
     {'':<25}{'':>8}{'':<15}{'TOTAL':>25}{gen_total_wo_pump["Energy"]:>8.3f}
     ---------------------------------------------------------------------------------
                                                             THIS YEAR       LAST YEAR
-   TS GRID DEMAND for {yesterday.strftime('%d %B')} (in MU){' '*(8-len(yesterday.strftime('%d %B')))}                 :{gen_total_wo_pump["Energy"]:>10.3f}    |{gen_total_wo_pump['PrevEnergy']:>11.3f}
+   TS GRID DEMAND for {yesterday.strftime('%d %B'):11} (in MU)                 :{gen_total_wo_pump["Energy"]:>10.3f}    |{gen_total_wo_pump['PrevEnergy']:>11.3f}
    {'Cumulative for the Month Total (in MU)':<55}:{tsdemand_monthcum[0][0]:>10.3f}    |{gen_data[gen_data['GenStationID']==37][['PrevEnergy']].iloc[0,0]:>11.3f}
    {'Cumulative for the Year Total (in MU) (From 1st April)':<55}:{gen_data[gen_data['GenStationID']==38][['Energy']].iloc[0,0]:>10.3f}    |{gen_data[gen_data['GenStationID']==38][['PrevEnergy']].iloc[0,0]:>11.3f}
     
@@ -1452,7 +1452,7 @@ def export_dailymu_to_text(request):
 
         tsdemand_monthdata=pd.DataFrame(tsdemand_monthdata,columns=['MorningPeak', 'EveningPeak', 'Energy', 'Date'])
         tsdemand_monthdata['MaxTSDemand']=tsdemand_monthdata[['MorningPeak', 'EveningPeak']].max(axis=1)
-
+        #print(tsdemand_monthdata)
         tsdemandmu_monthdata=pd.DataFrame(tsdemandmu_monthdata,columns=['MorningPeak', 'EveningPeak', 'Energy', 'Date'])
 
         monthgendata = pd.DataFrame(monthgendata,columns=['GenStationID', 'GenStationName', 'GenType', 'InstalledCap', 'Energy', 'Date'])
@@ -1463,7 +1463,7 @@ def export_dailymu_to_text(request):
 
         def monthlyenergyreport(df_allgen,type):
             df_filtered=df_allgen[df_allgen['GenType'].isin(type)]
-            #print(df_filtered)
+            print(df_filtered)
 
             for GenStationID in df_filtered['GenStationID'].unique():
                 df_station=df_filtered.loc[df_filtered['GenStationID']==GenStationID]
@@ -1489,13 +1489,15 @@ def export_dailymu_to_text(request):
             return df_report
 
         report_hydel=monthlyenergyreport(monthgendata,['Hydel'])
-        #print(report_hydel)
+        #print(monthgendata)
         report_thermal=monthlyenergyreport(monthgendata,['Thermal'])
         report_genco=pd.concat([report_hydel,report_thermal],axis=0).reset_index()
         report_thermal['CapUtil']=report_thermal['CUM']*100000/report_thermal['InstalledCap']/24/yesterday.day
         report_thermal=report_thermal[list(report_thermal.columns[:-2])+[report_thermal.columns[-1],report_thermal.columns[-2]]]
+        #print(report_thermal)
 #        print(list(report_thermal.columns[:-2])+[report_thermal.columns[-1],report_thermal.columns[-2]])
         report_lta=monthlyenergyreport(monthgendata,['LTA'])
+        #print(report_lta)
         report_cgs=monthlyenergyreport(monthgendata,['Central Sector'])
         report_apisgs=monthlyenergyreport(monthgendata,['APISGS'])
         report_solar=monthlyenergyreport(monthgendata,['Private_solar'])
