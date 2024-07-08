@@ -137,6 +137,7 @@ def import_data_from_excel(file_path):
             print('Uploaded Inflow Discharge data')
 
 
+
         if 'WeatherandOtherParameters' in openpyxl.load_workbook(file_path).sheetnames:
             df_weather = pd.read_excel(file_path, sheet_name='WeatherandOtherParameters')
             for index, row in df_weather.iterrows():
@@ -415,7 +416,7 @@ No |                            |  {gridfreq_data.iloc[0,0]:.2f}HZ      {gridfre
 -----------------------(MW)------------------------------------------------------
 (1)     (2)                         (3)         (4)           (5)           (6)
 ---------------------------------------------------------------------------------
- I  TS GENCO"""
+ I  TG GENCO"""
 
     # Add the data rows to the report content
     for i in range(hydel.shape[0]):
@@ -424,7 +425,7 @@ No |                            |  {gridfreq_data.iloc[0,0]:.2f}HZ      {gridfre
       report_content += row_content
 
     row_content = f"""
-       TS HYDEL-->    {hydel["InstalledCap"].sum():>6.0f}{hydel["MorningPeak"].sum():>12.0f}{hydel["EveningPeak"].sum():>12.0f}{hydel["Energy"].sum():>14.3f}    |{hydel["PrevEnergy"].sum():>10.3f}
+       TG HYDEL-->    {hydel["InstalledCap"].sum():>6.0f}{hydel["MorningPeak"].sum():>12.0f}{hydel["EveningPeak"].sum():>12.0f}{hydel["Energy"].sum():>14.3f}    |{hydel["PrevEnergy"].sum():>10.3f}
         """       
     report_content += row_content
 
@@ -435,12 +436,12 @@ No |                            |  {gridfreq_data.iloc[0,0]:.2f}HZ      {gridfre
       report_content += row_content
 
     row_content = f"""
-       TS THERMAL-->  {thermal["InstalledCap"].sum():>6.0f}{thermal["MorningPeak"].sum():>12.0f}{thermal["EveningPeak"].sum():>12.0f}{thermal["Energy"].sum():>14.3f}    |{thermal["PrevEnergy"].sum():>10.3f}"""       
+       TG THERMAL-->  {thermal["InstalledCap"].sum():>6.0f}{thermal["MorningPeak"].sum():>12.0f}{thermal["EveningPeak"].sum():>12.0f}{thermal["Energy"].sum():>14.3f}    |{thermal["PrevEnergy"].sum():>10.3f}"""       
     report_content += row_content
 
     row_content = f"""
 
-       TSGENCO TOTAL->{genco["InstalledCap"].sum():>6.0f}{genco["MorningPeak"].sum():>12.0f}{genco["EveningPeak"].sum():>12.0f}{genco["Energy"].sum():>14.3f}    |{genco["PrevEnergy"].sum():>10.3f}"""       
+      TG GENCO TOTAL->{genco["InstalledCap"].sum():>6.0f}{genco["MorningPeak"].sum():>12.0f}{genco["EveningPeak"].sum():>12.0f}{genco["Energy"].sum():>14.3f}    |{genco["PrevEnergy"].sum():>10.3f}"""       
     report_content += row_content
 
     for i in range(lta.shape[0]):
@@ -459,7 +460,7 @@ II CENTRAL SECTOR"""
 
     row_content = f"""
 
-III TSShare OF APISGS->{APISGS.iloc[0,2]:>5.0f}{APISGS.iloc[0,3]:>12.0f}{APISGS.iloc[0,4]:>12.0f}{APISGS.iloc[0,5].round(2):>14.3f}    |{APISGS.iloc[0,6]:>10.3f}"""       
+III TGShare OF APISGS->{APISGS.iloc[0,2]:>5.0f}{APISGS.iloc[0,3]:>12.0f}{APISGS.iloc[0,4]:>12.0f}{APISGS.iloc[0,5].round(2):>14.3f}    |{APISGS.iloc[0,6]:>10.3f}"""       
     report_content += row_content
 
     row_content = f"""
@@ -569,7 +570,7 @@ X   {pump.iloc[1,0]:<24}{pump.iloc[1,3]:>12.0f}{pump.iloc[1,4]:>12.0f}{pump.iloc
 
     row_content = f"""
 
-XI  TS DEMAND(EX-BUS) {gen_total_wo_pump["InstalledCap"]:<6.0f}{gen_total_wo_pump["MorningPeak"]:>12.0f}{gen_total_wo_pump["EveningPeak"]:>12.0f}{'':>16}   |{PrevTSDemand[0][0]:>8.0f}
+XI  TG DEMAND(EX-BUS) {gen_total_wo_pump["InstalledCap"]:<6.0f}{gen_total_wo_pump["MorningPeak"]:>12.0f}{gen_total_wo_pump["EveningPeak"]:>12.0f}{'':>16}   |{PrevTSDemand[0][0]:>8.0f}
 
 
        ENERGY (MU)    {'':>6}{'':>12}{'':>12}{gen_total_wo_pump["Energy"]:>16.3f}   |{gen_total_wo_pump["PrevEnergy"]:>8.3f}"""
@@ -653,7 +654,7 @@ Thermal- {thermal["MorningPeak"].sum():.0f} MW, {thermal["Energy"].sum():.3f} MU
 Singareni- {lta.loc[lta['GenStationID']==18].MorningPeak.values[0]:.0f} MW, {lta.loc[lta['GenStationID']==18].Energy.values[0]:.3f} MU;
 Chattisgarh- {lta.loc[lta['GenStationID']==20].MorningPeak.values[0]:.0f} MW, {lta.loc[lta['GenStationID']==20].Energy.values[0]:.3f} MU;
 CGS- {central_sector.loc[central_sector['GenStationID']==21].MorningPeak.values[0]:.0f} MW, {central_sector.loc[central_sector['GenStationID']==21].Energy.values[0]:.3f} MU;
-TS Share of APISGS- {APISGS.loc[APISGS['GenStationID']==22].MorningPeak.values[0]:.0f} MW, {APISGS.loc[APISGS['GenStationID']==22].Energy.values[0]:.3f} MU;
+TG Share of APISGS- {APISGS.loc[APISGS['GenStationID']==22].MorningPeak.values[0]:.0f} MW, {APISGS.loc[APISGS['GenStationID']==22].Energy.values[0]:.3f} MU;
 Pvt Sector- {private_total["MorningPeak"].sum():.0f} MW, {private_total["Energy"].sum():.3f} MU;
 State Purchases- {state_purchases["MorningPeak"].sum():.0f} MW, {state_purchases["Energy"].sum():.3f} MU;
 Third Party Purchases- {third_party_purchase["MorningPeak"].sum():.0f} MW, {third_party_purchase["Energy"].sum():.3f} MU;
@@ -690,7 +691,7 @@ Thermal- {thermal["EveningPeak"].sum():.0f} MW, {thermal["Energy"].sum():.3f} MU
 Singareni- {lta.loc[lta['GenStationID']==18].EveningPeak.values[0]:.0f} MW, {lta.loc[lta['GenStationID']==18].Energy.values[0]:.3f} MU;
 Chattisgarh- {lta.loc[lta['GenStationID']==20].EveningPeak.values[0]:.0f} MW, {lta.loc[lta['GenStationID']==20].Energy.values[0]:.3f} MU;
 CGS- {central_sector.loc[central_sector['GenStationID']==21].EveningPeak.values[0]:.0f} MW, {central_sector.loc[central_sector['GenStationID']==21].Energy.values[0]:.3f} MU;
-TS Share of APISGS- {APISGS.loc[APISGS['GenStationID']==22].EveningPeak.values[0]:.0f} MW, {APISGS.loc[APISGS['GenStationID']==22].Energy.values[0]:.3f} MU;
+TG Share of APISGS- {APISGS.loc[APISGS['GenStationID']==22].EveningPeak.values[0]:.0f} MW, {APISGS.loc[APISGS['GenStationID']==22].Energy.values[0]:.3f} MU;
 Pvt Sector-{private_total["EveningPeak"].sum():.0f} MW, {private_total["Energy"].sum():.3f} MU;
 State Purchases-{state_purchases["EveningPeak"].sum():.0f} MW, {state_purchases["Energy"].sum():.3f} MU;
 Third Party Purchases-{third_party_purchase["EveningPeak"].sum():.0f} MW, {third_party_purchase["Energy"].sum():.3f} MU;
@@ -956,6 +957,7 @@ def export_to_text(request):
         inf_pulichintala = inflowsdischargedata[(inflowsdischargedata['Type']=='Inflow') & (inflowsdischargedata['DamName']=='Pulichintala')]
         dis_ujurala = inflowsdischargedata[(inflowsdischargedata['Type']=='Discharge') & (inflowsdischargedata['DamName']=='Upper Jurala')]
         dis_ljurala = inflowsdischargedata[(inflowsdischargedata['Type']=='Discharge') & (inflowsdischargedata['DamName']=='Lower Jurala')]
+        print(dis_ljurala)
         dis_nsagar = inflowsdischargedata[(inflowsdischargedata['Type']=='Discharge') & (inflowsdischargedata['DamName']=='NSagar')]
         dis_srisailam= inflowsdischargedata[(inflowsdischargedata['Type']=='Discharge') & (inflowsdischargedata['DamName']=='Srisailam')]
         dis_pulichintala= inflowsdischargedata[(inflowsdischargedata['Type']=='Discharge') & (inflowsdischargedata['DamName']=='Pulichintala')]
@@ -1061,7 +1063,7 @@ No |                            |  {gridfreq_data.iloc[0,0]:.2f}HZ      {gridfre
 -----------------------(MW)------------------------------------------------------
 (1)     (2)                         (3)         (4)           (5)           (6)
 ---------------------------------------------------------------------------------
- I  TS GENCO"""
+ I  TG GENCO"""
 
     # Add the data rows to the report content
     for i in range(hydel.shape[0]):
@@ -1070,7 +1072,7 @@ No |                            |  {gridfreq_data.iloc[0,0]:.2f}HZ      {gridfre
       report_content += row_content
 
     row_content = f"""
-       TS HYDEL-->    {hydel["InstalledCap"].sum():>6.0f}{hydel["MorningPeak"].sum():>12.0f}{hydel["EveningPeak"].sum():>12.0f}{hydel["Energy"].sum():>14.3f}    |{hydel["PrevEnergy"].sum():>10.3f}
+       TG HYDEL-->    {hydel["InstalledCap"].sum():>6.0f}{hydel["MorningPeak"].sum():>12.0f}{hydel["EveningPeak"].sum():>12.0f}{hydel["Energy"].sum():>14.3f}    |{hydel["PrevEnergy"].sum():>10.3f}
         """       
     report_content += row_content
 
@@ -1081,12 +1083,12 @@ No |                            |  {gridfreq_data.iloc[0,0]:.2f}HZ      {gridfre
       report_content += row_content
 
     row_content = f"""
-       TS THERMAL-->  {thermal["InstalledCap"].sum():>6.0f}{thermal["MorningPeak"].sum():>12.0f}{thermal["EveningPeak"].sum():>12.0f}{thermal["Energy"].sum():>14.3f}    |{thermal["PrevEnergy"].sum():>10.3f}"""       
+       TG THERMAL-->  {thermal["InstalledCap"].sum():>6.0f}{thermal["MorningPeak"].sum():>12.0f}{thermal["EveningPeak"].sum():>12.0f}{thermal["Energy"].sum():>14.3f}    |{thermal["PrevEnergy"].sum():>10.3f}"""       
     report_content += row_content
 
     row_content = f"""
 
-       TSGENCO TOTAL->{genco["InstalledCap"].sum():>6.0f}{genco["MorningPeak"].sum():>12.0f}{genco["EveningPeak"].sum():>12.0f}{genco["Energy"].sum():>14.3f}    |{genco["PrevEnergy"].sum():>10.3f}"""       
+      TG GENCO TOTAL->{genco["InstalledCap"].sum():>6.0f}{genco["MorningPeak"].sum():>12.0f}{genco["EveningPeak"].sum():>12.0f}{genco["Energy"].sum():>14.3f}    |{genco["PrevEnergy"].sum():>10.3f}"""       
     report_content += row_content
 
     for i in range(lta.shape[0]):
@@ -1105,7 +1107,7 @@ II CENTRAL SECTOR"""
 
     row_content = f"""
 
-III TSShare OF APISGS->{APISGS.iloc[0,2]:>5.0f}{APISGS.iloc[0,3]:>12.0f}{APISGS.iloc[0,4]:>12.0f}{APISGS.iloc[0,5].round(2):>14.3f}    |{APISGS.iloc[0,6]:>10.3f}"""       
+III TGShare OF APISGS->{APISGS.iloc[0,2]:>5.0f}{APISGS.iloc[0,3]:>12.0f}{APISGS.iloc[0,4]:>12.0f}{APISGS.iloc[0,5].round(2):>14.3f}    |{APISGS.iloc[0,6]:>10.3f}"""       
     report_content += row_content
 
     row_content = f"""
@@ -1214,7 +1216,7 @@ X   {pump.iloc[1,0]:<24}{pump.iloc[1,3]:>12.0f}{pump.iloc[1,4]:>12.0f}{pump.iloc
 
     row_content = f"""
 
-XI  TS DEMAND(EX-BUS) {gen_total_wo_pump["InstalledCap"]:<6.0f}{gen_total_wo_pump["MorningPeak"]:>12.0f}{gen_total_wo_pump["EveningPeak"]:>12.0f}{'':>16}   |{PrevTSDemand[0][0]:>8.0f}
+XI  TG DEMAND(EX-BUS) {gen_total_wo_pump["InstalledCap"]:<6.0f}{gen_total_wo_pump["MorningPeak"]:>12.0f}{gen_total_wo_pump["EveningPeak"]:>12.0f}{'':>16}   |{PrevTSDemand[0][0]:>8.0f}
 
 
        ENERGY (MU)    {'':>6}{'':>12}{'':>12}{gen_total_wo_pump["Energy"]:>16.3f}   |{gen_total_wo_pump["PrevEnergy"]:>8.3f}"""
@@ -1282,16 +1284,16 @@ TOTAL SCHEDULES & DRAWALS FROM CENTRAL NETWORK INCLUDING CENTRAL GENERATING STAT
 
     {'GENERATION SUMMARY AS ON '+yesterday.strftime('%d/%m/%Y')+' (MU)':^81}
     {'----------------------------------------':^81}
-    {'TS HYDEL GEN .........':<25}{hydel["Energy"].sum():>8.3f}{'':<15}{'TS SHARE of APISGS..':<25}{APISGS.iloc[0,5]:>8.3f}
-    {'TS THERMAL GEN........':<25}{thermal["Energy"].sum():>8.3f}{'':<15}{'PRIVATE SECTOR......':<25}{private_total["Energy"].sum():>8.3f}
-    {'TS GENCO TOTAL........':<25}{genco["Energy"].sum():>8.3f}{'':<15}{'STATE PURCHASES.....':<25}{state_purchases["Energy"].sum():>8.3f}
+    {'TG HYDEL GEN .........':<25}{hydel["Energy"].sum():>8.3f}{'':<15}{'TG SHARE of APISGS..':<25}{APISGS.iloc[0,5]:>8.3f}
+    {'TG THERMAL GEN........':<25}{thermal["Energy"].sum():>8.3f}{'':<15}{'PRIVATE SECTOR......':<25}{private_total["Energy"].sum():>8.3f}
+    {'TG GENCO TOTAL........':<25}{genco["Energy"].sum():>8.3f}{'':<15}{'STATE PURCHASES.....':<25}{state_purchases["Energy"].sum():>8.3f}
     {'SINGARENI... .........':<25}{lta.loc[18,'Energy']:>8.3f}{'':<15}{'3RD PARTY PURC+SALES':<25}{(third_party_purchase.iloc[0,5]+third_party_sales.iloc[0,5]):>8.3f}
     {'CHATTISGARH SPDCL.....':<25}{lta.loc[20,'Energy']:>8.3f}{'':<15}{'SSLB PUMP CONSUMP...':<25}{pump.iloc[0,5]:>8.3f}
     {'CGS UTIL..............':<25}{central_sector.iloc[0,5]:>8.3f}{'':<15}{'NSR PUMP CONSUMP....':<25}{pump.iloc[1,5]:>8.3f}
     {'':<25}{'':>8}{'':<15}{'TOTAL':>25}{gen_total_wo_pump["Energy"]:>8.3f}
     ---------------------------------------------------------------------------------
                                                             THIS YEAR       LAST YEAR
-   TS GRID DEMAND for {yesterday.strftime('%d %B'):11} (in MU)                 :{gen_total_wo_pump["Energy"]:>10.3f}    |{gen_total_wo_pump['PrevEnergy']:>11.3f}
+   TG GRID DEMAND for {yesterday.strftime('%d %B'):11} (in MU)                 :{gen_total_wo_pump["Energy"]:>10.3f}    |{gen_total_wo_pump['PrevEnergy']:>11.3f}
    {'Cumulative for the Month Total (in MU)':<55}:{tsdemand_monthcum[0][0]:>10.3f}    |{gen_data[gen_data['GenStationID']==37][['PrevEnergy']].iloc[0,0]:>11.3f}
    {'Cumulative for the Year Total (in MU) (From 1st April)':<55}:{gen_data[gen_data['GenStationID']==38][['Energy']].iloc[0,0]:>10.3f}    |{gen_data[gen_data['GenStationID']==38][['PrevEnergy']].iloc[0,0]:>11.3f}
     
@@ -1335,7 +1337,7 @@ TOTAL SCHEDULES & DRAWALS FROM CENTRAL NETWORK INCLUDING CENTRAL GENERATING STAT
   {'Inflows in Cusecs @ 06:00 Hrs':^31}        {'Discharges in Cusecs (Avg)':^35}
   ============================           ====================(00 to 24)   (06 to 06)
   1. {'U_JURALA':<19}{inflowsdischargedata.iloc[0,5]:>6}         {'1.':>4}{'U_JURALA':<19}{dis_ujurala.iloc[0,4]:>6}{dis_ujurala.iloc[0,5]:>13}
-     {'':<19}{'':>6}         {'':>4}{'L_JURALA':<19}{dis_ljurala.iloc[0,5]:>6}
+     {'':<19}{'':>6}         {'':>4}{'L_JURALA':<19}{dis_ljurala.iloc[0,4]:>6}
 
   2. {'SRISAILAM':<21}{'':>6}       {'2.':>4}{'SRISAILAM':<20}
       {inf_srisailam.iloc[0,1]:<18}{inf_srisailam.iloc[0,5]:>6}         {'':>5}{dis_srisailam.iloc[0,1]:<18}{dis_srisailam.iloc[0,4]:>6}{dis_srisailam.iloc[0,5]:>13}
@@ -1527,7 +1529,7 @@ def export_dailymu_to_text(request):
 
 
     report_content = ''
-    row_content = f"""TS TRANSCO GENERATION DAYWISE DATA IN MILLION UNITS FROM   {monthstartday[-2:]}/{monthstartday[-5:-3]}/{monthstartday[:4]}  TO  {yesterday.strftime('%d/%m/%Y')}
+    row_content = f"""TG TRANSCO GENERATION DAYWISE DATA IN MILLION UNITS FROM   {monthstartday[-2:]}/{monthstartday[-5:-3]}/{monthstartday[:4]}  TO  {yesterday.strftime('%d/%m/%Y')}
 """
     report_content += row_content
     
@@ -1658,7 +1660,7 @@ def export_dailymu_to_text(request):
 
 """
 #    print(report_genco.sum(axis=0))
-    report_content += f"""{addcontent_series(report_genco.sum(axis=0),'TS GENCO TOTAL')}
+    report_content += f"""{addcontent_series(report_genco.sum(axis=0),'TG GENCO TOTAL')}
 """
 
 
@@ -1694,7 +1696,7 @@ STATE PURCHASES:
     report_content += f"""{'':30}{'      '*(yesterday.day):>6}{'':8}{'Max':>9}
 """
 
-    report_content += f"""{'TS DEMAND (MU)':<29}"""
+    report_content += f"""{'TG DEMAND (MU)':<29}"""
     for i in range(tsdemandmu_monthdata['Energy'].shape[0]):
         row_content = f"""{tsdemandmu_monthdata['Energy'][i]:>6.1f}"""
         report_content += row_content
@@ -1703,7 +1705,7 @@ STATE PURCHASES:
     report_content+=f"""{tsdemandmu_monthdata['Energy'].mean():>7.2f}"""
 
     report_content += f"""
-{'TS DEMAND (MW)':<29}"""
+{'TG DEMAND (MW)':<29}"""
         
     for i in range(tsdemand_monthdata['MaxTSDemand'].shape[0]):
         row_content = f"""{tsdemand_monthdata['MaxTSDemand'][i]:>6.0f}"""
