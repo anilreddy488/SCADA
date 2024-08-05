@@ -1,4 +1,5 @@
 from pickle import TRUE
+from tkinter import ROUND
 from django.shortcuts import render, redirect
 from django.contrib.auth.views import LoginView
 from .forms import *
@@ -1072,7 +1073,7 @@ No |                            |  {gridfreq_data.iloc[0,0]:.2f}HZ      {gridfre
       report_content += row_content
 
     row_content = f"""
-       TG HYDEL-->    {hydel["InstalledCap"].sum():>6.0f}{hydel["MorningPeak"].sum():>12.0f}{hydel["EveningPeak"].sum():>12.0f}{hydel["Energy"].sum():>14.3f}    |{hydel["PrevEnergy"].sum():>10.3f}
+       TG HYDEL-->    {round(hydel["InstalledCap"].sum()):>6.0f}{hydel["MorningPeak"].sum():>12.0f}{hydel["EveningPeak"].sum():>12.0f}{hydel["Energy"].sum():>14.3f}    |{hydel["PrevEnergy"].sum():>10.3f}
         """       
     report_content += row_content
 
@@ -1083,12 +1084,12 @@ No |                            |  {gridfreq_data.iloc[0,0]:.2f}HZ      {gridfre
       report_content += row_content
 
     row_content = f"""
-       TG THERMAL-->  {thermal["InstalledCap"].sum():>6.0f}{thermal["MorningPeak"].sum():>12.0f}{thermal["EveningPeak"].sum():>12.0f}{thermal["Energy"].sum():>14.3f}    |{thermal["PrevEnergy"].sum():>10.3f}"""       
+       TG THERMAL-->  {round(thermal["InstalledCap"].sum()):>6.0f}{thermal["MorningPeak"].sum():>12.0f}{thermal["EveningPeak"].sum():>12.0f}{thermal["Energy"].sum():>14.3f}    |{thermal["PrevEnergy"].sum():>10.3f}"""       
     report_content += row_content
 
     row_content = f"""
 
-      TG GENCO TOTAL->{genco["InstalledCap"].sum():>6.0f}{genco["MorningPeak"].sum():>12.0f}{genco["EveningPeak"].sum():>12.0f}{genco["Energy"].sum():>14.3f}    |{genco["PrevEnergy"].sum():>10.3f}"""       
+      TG GENCO TOTAL->{round(genco["InstalledCap"].sum()):>6.0f}{genco["MorningPeak"].sum():>12.0f}{genco["EveningPeak"].sum():>12.0f}{genco["Energy"].sum():>14.3f}    |{genco["PrevEnergy"].sum():>10.3f}"""       
     report_content += row_content
 
     for i in range(lta.shape[0]):
