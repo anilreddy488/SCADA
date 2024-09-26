@@ -136,7 +136,7 @@ def import_data_from_excel(file_path):
                 instance.InfDis06to06 = row['InfDis06to06']
                 instance.save()
             print('Uploaded Inflow Discharge data')
-
+                
 
 
         if 'WeatherandOtherParameters' in openpyxl.load_workbook(file_path).sheetnames:
