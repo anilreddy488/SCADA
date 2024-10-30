@@ -253,7 +253,11 @@ def export_to_text_fir(request):
                FROM dailyreport_DemandData
                WHERE Date=%(previous_year_day)s AND GenStationID=36
                """
-
+    query_Infirm = """
+               SELECT InstalledCap 
+               FROM dailyreport_DemandData
+               WHERE Date=%(yesterday)s AND GenStationID=55
+               """
 
     query_PrevLoadFactor = """
                SELECT Energy 
@@ -309,7 +313,8 @@ def export_to_text_fir(request):
         cursor.execute(query_PrevTSDemand, {'previous_year_day': previous_year_day})
         PrevTSDemand = cursor.fetchall()
 
-
+        cursor.execute(query_Infirm, {'yesterday': yesterday})
+        TotalInfirm = cursor.fetchall()
 
 
         cursor.execute(query_gridfreq, {'yesterday': yesterday})
@@ -402,7 +407,7 @@ def export_to_text_fir(request):
     alphabets=['a','b','c','d','e','f','g']
 
     
-    
+    #print(thermal)
 
     # Create the report content as a string
     report_content = f"""
@@ -432,17 +437,22 @@ No |                            |  {gridfreq_data.iloc[0,0]:.2f}HZ      {gridfre
 
 
     for i in range(thermal.shape[0]):
-      row_content = f"""
+        if thermal.iloc[i,7]==13:
+          row_content = f"""
+     {thermal.iloc[i,0]:<17}{thermal.iloc[i,2]:>6.1f}{thermal.iloc[i,3]:>12.0f}{thermal.iloc[i,4]:>12.0f}{thermal.iloc[i,5]:>14.3f}    |{thermal.iloc[i,6]:>10.3f}"""
+          report_content += row_content
+        else:
+          row_content = f"""
      {thermal.iloc[i,0]:<17}{thermal.iloc[i,2]:>6.0f}{thermal.iloc[i,3]:>12.0f}{thermal.iloc[i,4]:>12.0f}{thermal.iloc[i,5]:>14.3f}    |{thermal.iloc[i,6]:>10.3f}"""
-      report_content += row_content
+          report_content += row_content
 
     row_content = f"""
-       TG THERMAL-->  {thermal["InstalledCap"].sum():>6.0f}{thermal["MorningPeak"].sum():>12.0f}{thermal["EveningPeak"].sum():>12.0f}{thermal["Energy"].sum():>14.3f}    |{thermal["PrevEnergy"].sum():>10.3f}"""       
+       TG THERMAL-->  {(thermal["InstalledCap"].sum()-TotalInfirm[0][0]):>6.0f}{thermal["MorningPeak"].sum():>12.0f}{thermal["EveningPeak"].sum():>12.0f}{thermal["Energy"].sum():>14.3f}    |{thermal["PrevEnergy"].sum():>10.3f}"""       
     report_content += row_content
 
     row_content = f"""
 
-      TG GENCO TOTAL->{genco["InstalledCap"].sum():>6.0f}{genco["MorningPeak"].sum():>12.0f}{genco["EveningPeak"].sum():>12.0f}{genco["Energy"].sum():>14.3f}    |{genco["PrevEnergy"].sum():>10.3f}"""       
+      TG GENCO TOTAL->{(genco["InstalledCap"].sum()-TotalInfirm[0][0]):>6.0f}{genco["MorningPeak"].sum():>12.0f}{genco["EveningPeak"].sum():>12.0f}{genco["Energy"].sum():>14.3f}    |{genco["PrevEnergy"].sum():>10.3f}"""       
     report_content += row_content
 
     for i in range(lta.shape[0]):
@@ -487,7 +497,7 @@ IV  PRIVATE SECTOR
      a) """   
 #    print(private)
     report_content += row_content
-    row_content = f"""{private.iloc[0,0]:<14}{private.iloc[0,2]:>6.0f}{private.iloc[0,3]:>12.0f}{private.iloc[0,4]:>12.0f}{private.iloc[0,5]:>16.3f}   |{private.iloc[0,6]:>8.3f}"""
+    row_content = f"""{private.iloc[0,0]:<14}{private.iloc[0,2]:>7.2f}{private.iloc[0,3]:>11.0f}{private.iloc[0,4]:>12.0f}{private.iloc[0,5]:>16.3f}   |{private.iloc[0,6]:>8.3f}"""
     report_content += row_content
 #    row_content = f"""{private.iloc[1,0]:<14}{private.iloc[1,2]:>6.1f}{private.iloc[1,3]:>10.0f}{private.iloc[1,4]:>12.0f}{private.iloc[1,5]:>16.3f}     |{private.iloc[1,6]:>8.3f}"""
 #    report_content += row_content
@@ -495,7 +505,7 @@ IV  PRIVATE SECTOR
      b) """       
     report_content += row_content
     for i in range(wind.shape[0]):
-      row_content = f"""{wind.iloc[i,0]:<14}{wind.iloc[i,2]:>6.1f}{wind.iloc[i,3]:>12.0f}{wind.iloc[i,4]:>12.0f}{wind.iloc[i,5]:>16.3f}   |{wind.iloc[i,6]:>8.3f}"""
+      row_content = f"""{wind.iloc[i,0]:<14}{wind.iloc[i,2]:>7.2f}{wind.iloc[i,3]:>11.0f}{wind.iloc[i,4]:>12.0f}{wind.iloc[i,5]:>16.3f}   |{wind.iloc[i,6]:>8.3f}"""
       report_content += row_content
 
     row_content = f"""
@@ -571,7 +581,7 @@ X   {pump.iloc[1,0]:<24}{pump.iloc[1,3]:>12.0f}{pump.iloc[1,4]:>12.0f}{pump.iloc
 
     row_content = f"""
 
-XI  TG DEMAND(EX-BUS) {gen_total_wo_pump["InstalledCap"]:<6.0f}{gen_total_wo_pump["MorningPeak"]:>12.0f}{gen_total_wo_pump["EveningPeak"]:>12.0f}{'':>16}   |{PrevTSDemand[0][0]:>8.0f}
+XI  TG DEMAND(EX-BUS) {(gen_total_wo_pump["InstalledCap"]-TotalInfirm[0][0]):<6.0f}{gen_total_wo_pump["MorningPeak"]:>12.0f}{gen_total_wo_pump["EveningPeak"]:>12.0f}{'':>16}   |{PrevTSDemand[0][0]:>8.0f}
 
 
        ENERGY (MU)    {'':>6}{'':>12}{'':>12}{gen_total_wo_pump["Energy"]:>16.3f}   |{gen_total_wo_pump["PrevEnergy"]:>8.3f}"""
