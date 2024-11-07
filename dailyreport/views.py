@@ -215,6 +215,183 @@ def user_logout(request):
 def home(request):
     return render(request, 'dailyreport/home.html')
 
+def first_page(gridfreq_data,hydel,thermal,TotalInfirm,genco,lta,central_sector,APISGS):
+    # Create the report content as a string
+    report_content = f""""""
+
+    # Add the data rows to the report content
+    for i in range(hydel.shape[0]):
+      row_content = f"""
+     {hydel.iloc[i,0]:<17}{hydel.iloc[i,2]:>6.0f}{hydel.iloc[i,3]:>12.0f}{hydel.iloc[i,4]:>12.0f}{hydel.iloc[i,5]:>14.3f}    |{hydel.iloc[i,6]:>10.3f}"""
+      report_content += row_content
+
+    row_content = f"""
+       TG HYDEL-->    {hydel["InstalledCap"].sum():>6.0f}{hydel["MorningPeak"].sum():>12.0f}{hydel["EveningPeak"].sum():>12.0f}{hydel["Energy"].sum():>14.3f}    |{hydel["PrevEnergy"].sum():>10.3f}
+        """       
+    report_content += row_content
+
+
+    for i in range(thermal.shape[0]):
+        if thermal.iloc[i,7]==13:
+          row_content = f"""
+     {thermal.iloc[i,0]:<17}{thermal.iloc[i,2]:>6.1f}{thermal.iloc[i,3]:>12.0f}{thermal.iloc[i,4]:>12.0f}{thermal.iloc[i,5]:>14.3f}    |{thermal.iloc[i,6]:>10.3f}"""
+          report_content += row_content
+        else:
+          row_content = f"""
+     {thermal.iloc[i,0]:<17}{thermal.iloc[i,2]:>6.0f}{thermal.iloc[i,3]:>12.0f}{thermal.iloc[i,4]:>12.0f}{thermal.iloc[i,5]:>14.3f}    |{thermal.iloc[i,6]:>10.3f}"""
+          report_content += row_content
+
+    row_content = f"""
+       TG THERMAL-->  {(thermal["InstalledCap"].sum()-TotalInfirm[0][0]):>6.1f}{thermal["MorningPeak"].sum():>12.0f}{thermal["EveningPeak"].sum():>12.0f}{thermal["Energy"].sum():>14.3f}    |{thermal["PrevEnergy"].sum():>10.3f}"""       
+    report_content += row_content
+
+    row_content = f"""
+
+      TG GENCO TOTAL->{(genco["InstalledCap"].sum()-TotalInfirm[0][0]):>6.1f}{genco["MorningPeak"].sum():>12.0f}{genco["EveningPeak"].sum():>12.0f}{genco["Energy"].sum():>14.3f}    |{genco["PrevEnergy"].sum():>10.3f}"""       
+    report_content += row_content
+
+    for i in range(lta.shape[0]):
+      row_content = f"""
+
+     {lta.iloc[i,0]:<17}{lta.iloc[i,2]:>6.0f}{lta.iloc[i,3]:>12.0f}{lta.iloc[i,4]:>12.0f}{lta.iloc[i,5]:>14.3f}    |{lta.iloc[i,6]:>10.3f}"""
+      report_content += row_content
+
+    row_content = f"""
+
+II CENTRAL SECTOR"""       
+    report_content += row_content
+    row_content = f"""
+     {central_sector.iloc[0,0]:<17}{central_sector.iloc[0,2]:>6.0f}{central_sector.iloc[0,3]:>12.0f}{central_sector.iloc[0,4]:>12.0f}{central_sector.iloc[0,5]:>14.3f}    |{central_sector.iloc[0,6]:>10.3f}"""
+    report_content += row_content
+
+    row_content = f"""
+
+III TGShare OF APISGS->{APISGS.iloc[0,2]:>5.0f}{APISGS.iloc[0,3]:>12.0f}{APISGS.iloc[0,4]:>12.0f}{APISGS.iloc[0,5].round(2):>14.3f}    |{APISGS.iloc[0,6]:>10.3f}"""       
+    report_content += row_content
+
+    return report_content
+
+
+
+
+
+
+def second_page(subindex,alphabets,private,wind,solar,nonconventional,private_total,state_purchases,third_party_purchase,third_party_sales,gen_total,pump,TotalInfirm,PrevTSDemand,gen_total_wo_pump,load_factor,PrevLoadFactor,romannumerals,maxcitysolardata):
+    # Create the report content as a string
+    report_content = f""""""
+    row_content = f"""
+IV  PRIVATE SECTOR
+
+     a) """   
+#    print(private)
+    report_content += row_content
+    row_content = f"""{private.iloc[0,0]:<14}{private.iloc[0,2]:>7.2f}{private.iloc[0,3]:>11.0f}{private.iloc[0,4]:>12.0f}{private.iloc[0,5]:>16.3f}   |{private.iloc[0,6]:>8.3f}"""
+    report_content += row_content
+#    row_content = f"""{private.iloc[1,0]:<14}{private.iloc[1,2]:>6.1f}{private.iloc[1,3]:>10.0f}{private.iloc[1,4]:>12.0f}{private.iloc[1,5]:>16.3f}     |{private.iloc[1,6]:>8.3f}"""
+#    report_content += row_content
+    row_content = f"""
+     b) """       
+    report_content += row_content
+    for i in range(wind.shape[0]):
+      row_content = f"""{wind.iloc[i,0]:<14}{wind.iloc[i,2]:>7.2f}{wind.iloc[i,3]:>11.0f}{wind.iloc[i,4]:>12.0f}{wind.iloc[i,5]:>16.3f}   |{wind.iloc[i,6]:>8.3f}"""
+      report_content += row_content
+
+    row_content = f"""
+
+     c) TOTAL SOLAR      {solar["InstalledCap"].sum():>6.2f}"""       
+    report_content += row_content
+    for i in range(solar.shape[0]):
+      row_content = f"""
+       {subindex[i]}){' '*(1-i)} {solar.iloc[i,0][:6]:<11}{solar.iloc[i,2]:>6.2f}{solar.iloc[i,3]:>11.0f}{solar.iloc[i,4]:>12.0f}{solar.iloc[i,5]:>16.3f}   |{solar.iloc[i,6]:>8.3f}"""
+      report_content += row_content
+    #print(solar)
+    row_content = f"""
+
+     d) NONCONVENTIONAL   {nonconventional["InstalledCap"].sum():>5.1f}{' ':12}{'':12}"""       
+    report_content += row_content
+    for i in range(nonconventional.shape[0]):
+        if i==0:
+            row_content = f"""
+       {subindex[i]}){'  '}{nonconventional.iloc[i,0]:<18}{nonconventional.iloc[i,3]:>11.0f}{nonconventional.iloc[i,4]:>12.0f}{nonconventional.iloc[i,5]:>16.3f}   |{nonconventional.iloc[i,6]:>8.3f}"""
+            report_content += row_content
+        else:
+            row_content = f"""
+       {subindex[i]}){' '}{nonconventional.iloc[i,0]:<18}{'':>11}{'':>12}{nonconventional.iloc[i,5]:>16.3f}   |{nonconventional.iloc[i,6]:>8.3f}"""
+            report_content += row_content
+ 
+    row_content = f"""
+
+     PRIVATE SECTOR TOTAL   {private_total["MorningPeak"].sum():12.0f}{private_total["EveningPeak"].sum():12.0f}{private_total["Energy"].sum():>16.3f}   |{private_total["PrevEnergy"].sum():>8.3f}"""       
+    report_content += row_content
+
+    row_content = f"""
+
+V   STATE PURCHASES   {'':>6}{' ':12}{' ':12}"""       
+    report_content += row_content
+
+    for i in range(state_purchases.shape[0]):
+      row_content = f"""
+     {alphabets[i]}) {state_purchases.iloc[i,0]:<14}{'':>6}{state_purchases.iloc[i,3]:>12.0f}{state_purchases.iloc[i,4]:>12.0f}{state_purchases.iloc[i,5]:>16.3f}   |{state_purchases.iloc[i,6]:>8.3f}"""
+      report_content += row_content
+    row_content = f"""
+
+     STATE PURCHASE TOTAL   {state_purchases["MorningPeak"].sum():12.0f}{state_purchases["EveningPeak"].sum():12.0f}{state_purchases["Energy"].sum():>16.3f}   |{state_purchases["PrevEnergy"].sum():>8.3f}"""
+    report_content += row_content
+    row_content = f"""
+
+VI  THIRD PARTY PURCHASES   {third_party_purchase.iloc[0,3]:>12.0f}{third_party_purchase.iloc[0,4]:>12.0f}{third_party_purchase.iloc[0,5]:>16.3f}   |{third_party_purchase.iloc[0,6]:>8.3f}
+    (CONSUMER PURCHASES)"""
+    report_content += row_content
+
+    row_content = f"""
+
+VII THIRD PARTY SALES       {third_party_sales.iloc[0,3]:>12.0f}{third_party_sales.iloc[0,4]:>12.0f}{third_party_sales.iloc[0,5]:>16.3f}   |{third_party_sales.iloc[0,6]:>8.3f}
+    (INTRA STATE PVT GENERATORS)"""
+    report_content += row_content
+
+    row_content = f"""
+
+VIII TOTAL DEMAND & CONSUMP {gen_total["MorningPeak"]:>12.0f}{gen_total["EveningPeak"]:>12.0f}{gen_total["Energy"]:>16.3f}   |{gen_total["PrevEnergy"]:>8.3f}
+     (WITH PUMPS)"""
+    report_content += row_content
+
+    row_content = f"""
+
+IX  {pump.iloc[0,0]:<24}{pump.iloc[0,3]:>12.0f}{pump.iloc[0,4]:>12.0f}{pump.iloc[0,5]:>16.3f}   |{pump.iloc[0,6]:>8.3f}"""
+    report_content += row_content
+
+    row_content = f"""
+
+
+X   {pump.iloc[1,0]:<24}{pump.iloc[1,3]:>12.0f}{pump.iloc[1,4]:>12.0f}{pump.iloc[1,5]:>16.3f}   |{pump.iloc[1,6]:>8.3f}
+    """
+    report_content += row_content
+
+    row_content = f"""
+
+XI  TG DEMAND(EX-BUS) {(gen_total_wo_pump["InstalledCap"]-TotalInfirm[0][0]):<6.1f}{gen_total_wo_pump["MorningPeak"]:>12.0f}{gen_total_wo_pump["EveningPeak"]:>12.0f}{'':>16}   |{PrevTSDemand[0][0]:>8.0f}
+
+
+       ENERGY (MU)    {'':>6}{'':>12}{'':>12}{gen_total_wo_pump["Energy"]:>16.3f}   |{gen_total_wo_pump["PrevEnergy"]:>8.3f}"""
+    report_content += row_content
+
+    row_content = f"""
+
+
+XII  Load Factor      {'':<6}{'':>12}{'':>12}{load_factor:>16.3f}%  |{PrevLoadFactor[0][0]:>8.3f}%
+"""
+    report_content += row_content
+
+
+    romannumerals=['XIII','XIV','XV','XVI']
+    for i in range(maxcitysolardata.shape[0]):
+        row_content = f"""
+{romannumerals[i]:<5}{maxcitysolardata.iloc[i,1]:<25}{maxcitysolardata.iloc[i,2]:>5.0f} MW    AT   {str(maxcitysolardata.iloc[i,3])[:5]:>8} Hrs
+"""   
+        #print(row_content)
+        report_content += row_content
+    return report_content
+    
 
 @login_required(login_url='login')
 def export_to_text_fir(request):
@@ -424,55 +601,8 @@ No |                            |  {gridfreq_data.iloc[0,0]:.2f}HZ      {gridfre
 ---------------------------------------------------------------------------------
  I  TG GENCO"""
 
-    # Add the data rows to the report content
-    for i in range(hydel.shape[0]):
-      row_content = f"""
-     {hydel.iloc[i,0]:<17}{hydel.iloc[i,2]:>6.0f}{hydel.iloc[i,3]:>12.0f}{hydel.iloc[i,4]:>12.0f}{hydel.iloc[i,5]:>14.3f}    |{hydel.iloc[i,6]:>10.3f}"""
-      report_content += row_content
-
-    row_content = f"""
-       TG HYDEL-->    {hydel["InstalledCap"].sum():>6.0f}{hydel["MorningPeak"].sum():>12.0f}{hydel["EveningPeak"].sum():>12.0f}{hydel["Energy"].sum():>14.3f}    |{hydel["PrevEnergy"].sum():>10.3f}
-        """       
-    report_content += row_content
-
-
-    for i in range(thermal.shape[0]):
-        if thermal.iloc[i,7]==13:
-          row_content = f"""
-     {thermal.iloc[i,0]:<17}{thermal.iloc[i,2]:>6.1f}{thermal.iloc[i,3]:>12.0f}{thermal.iloc[i,4]:>12.0f}{thermal.iloc[i,5]:>14.3f}    |{thermal.iloc[i,6]:>10.3f}"""
-          report_content += row_content
-        else:
-          row_content = f"""
-     {thermal.iloc[i,0]:<17}{thermal.iloc[i,2]:>6.0f}{thermal.iloc[i,3]:>12.0f}{thermal.iloc[i,4]:>12.0f}{thermal.iloc[i,5]:>14.3f}    |{thermal.iloc[i,6]:>10.3f}"""
-          report_content += row_content
-
-    row_content = f"""
-       TG THERMAL-->  {(thermal["InstalledCap"].sum()-TotalInfirm[0][0]):>6.0f}{thermal["MorningPeak"].sum():>12.0f}{thermal["EveningPeak"].sum():>12.0f}{thermal["Energy"].sum():>14.3f}    |{thermal["PrevEnergy"].sum():>10.3f}"""       
-    report_content += row_content
-
-    row_content = f"""
-
-      TG GENCO TOTAL->{(genco["InstalledCap"].sum()-TotalInfirm[0][0]):>6.0f}{genco["MorningPeak"].sum():>12.0f}{genco["EveningPeak"].sum():>12.0f}{genco["Energy"].sum():>14.3f}    |{genco["PrevEnergy"].sum():>10.3f}"""       
-    report_content += row_content
-
-    for i in range(lta.shape[0]):
-      row_content = f"""
-
-     {lta.iloc[i,0]:<17}{lta.iloc[i,2]:>6.0f}{lta.iloc[i,3]:>12.0f}{lta.iloc[i,4]:>12.0f}{lta.iloc[i,5]:>14.3f}    |{lta.iloc[i,6]:>10.3f}"""
-      report_content += row_content
-
-    row_content = f"""
-
-II CENTRAL SECTOR"""       
-    report_content += row_content
-    row_content = f"""
-     {central_sector.iloc[0,0]:<17}{central_sector.iloc[0,2]:>6.0f}{central_sector.iloc[0,3]:>12.0f}{central_sector.iloc[0,4]:>12.0f}{central_sector.iloc[0,5]:>14.3f}    |{central_sector.iloc[0,6]:>10.3f}"""
-    report_content += row_content
-
-    row_content = f"""
-
-III TGShare OF APISGS->{APISGS.iloc[0,2]:>5.0f}{APISGS.iloc[0,3]:>12.0f}{APISGS.iloc[0,4]:>12.0f}{APISGS.iloc[0,5].round(2):>14.3f}    |{APISGS.iloc[0,6]:>10.3f}"""       
-    report_content += row_content
+    report_content += first_page(gridfreq_data,hydel,thermal,TotalInfirm,genco,lta,central_sector,APISGS)
+    romannumerals=['XIII','XIV','XV','XVI']
 
     row_content = f"""
 
@@ -490,118 +620,8 @@ No |                            |  {gridfreq_data.iloc[0,0]:.2f}HZ      {gridfre
 ----------------------------------------------------------------------------------
 """
     report_content += row_content
+    report_content += second_page(subindex,alphabets,private,wind,solar,nonconventional,private_total,state_purchases,third_party_purchase,third_party_sales,gen_total,pump,TotalInfirm,PrevTSDemand,gen_total_wo_pump,load_factor,PrevLoadFactor,romannumerals,maxcitysolardata)
 
-    row_content = f"""
-IV  PRIVATE SECTOR
-
-     a) """   
-#    print(private)
-    report_content += row_content
-    row_content = f"""{private.iloc[0,0]:<14}{private.iloc[0,2]:>7.2f}{private.iloc[0,3]:>11.0f}{private.iloc[0,4]:>12.0f}{private.iloc[0,5]:>16.3f}   |{private.iloc[0,6]:>8.3f}"""
-    report_content += row_content
-#    row_content = f"""{private.iloc[1,0]:<14}{private.iloc[1,2]:>6.1f}{private.iloc[1,3]:>10.0f}{private.iloc[1,4]:>12.0f}{private.iloc[1,5]:>16.3f}     |{private.iloc[1,6]:>8.3f}"""
-#    report_content += row_content
-    row_content = f"""
-     b) """       
-    report_content += row_content
-    for i in range(wind.shape[0]):
-      row_content = f"""{wind.iloc[i,0]:<14}{wind.iloc[i,2]:>7.2f}{wind.iloc[i,3]:>11.0f}{wind.iloc[i,4]:>12.0f}{wind.iloc[i,5]:>16.3f}   |{wind.iloc[i,6]:>8.3f}"""
-      report_content += row_content
-
-    row_content = f"""
-
-     c) TOTAL SOLAR      {solar["InstalledCap"].sum():>6.2f}"""       
-    report_content += row_content
-    for i in range(solar.shape[0]):
-      row_content = f"""
-       {subindex[i]}){' '*(1-i)} {solar.iloc[i,0][:6]:<11}{solar.iloc[i,2]:>6.2f}{solar.iloc[i,3]:>11.0f}{solar.iloc[i,4]:>12.0f}{solar.iloc[i,5]:>16.3f}   |{solar.iloc[i,6]:>8.3f}"""
-      report_content += row_content
-    #print(solar)
-    row_content = f"""
-
-     d) NONCONVENTIONAL   {nonconventional["InstalledCap"].sum():>5.1f}{' ':12}{'':12}"""       
-    report_content += row_content
-    for i in range(nonconventional.shape[0]):
-        if i==0:
-            row_content = f"""
-       {subindex[i]}){'  '}{nonconventional.iloc[i,0]:<18}{nonconventional.iloc[i,3]:>11.0f}{nonconventional.iloc[i,4]:>12.0f}{nonconventional.iloc[i,5]:>16.3f}   |{nonconventional.iloc[i,6]:>8.3f}"""
-            report_content += row_content
-        else:
-            row_content = f"""
-       {subindex[i]}){' '}{nonconventional.iloc[i,0]:<18}{'':>11}{'':>12}{nonconventional.iloc[i,5]:>16.3f}   |{nonconventional.iloc[i,6]:>8.3f}"""
-            report_content += row_content
- 
-    row_content = f"""
-
-     PRIVATE SECTOR TOTAL   {private_total["MorningPeak"].sum():12.0f}{private_total["EveningPeak"].sum():12.0f}{private_total["Energy"].sum():>16.3f}   |{private_total["PrevEnergy"].sum():>8.3f}"""       
-    report_content += row_content
-
-    row_content = f"""
-
-V   STATE PURCHASES   {'':>6}{' ':12}{' ':12}"""       
-    report_content += row_content
-
-    for i in range(state_purchases.shape[0]):
-      row_content = f"""
-     {alphabets[i]}) {state_purchases.iloc[i,0]:<14}{'':>6}{state_purchases.iloc[i,3]:>12.0f}{state_purchases.iloc[i,4]:>12.0f}{state_purchases.iloc[i,5]:>16.3f}   |{state_purchases.iloc[i,6]:>8.3f}"""
-      report_content += row_content
-    row_content = f"""
-
-     STATE PURCHASE TOTAL   {state_purchases["MorningPeak"].sum():12.0f}{state_purchases["EveningPeak"].sum():12.0f}{state_purchases["Energy"].sum():>16.3f}   |{state_purchases["PrevEnergy"].sum():>8.3f}"""
-    report_content += row_content
-    row_content = f"""
-
-VI  THIRD PARTY PURCHASES   {third_party_purchase.iloc[0,3]:>12.0f}{third_party_purchase.iloc[0,4]:>12.0f}{third_party_purchase.iloc[0,5]:>16.3f}   |{third_party_purchase.iloc[0,6]:>8.3f}
-    (CONSUMER PURCHASES)"""
-    report_content += row_content
-
-    row_content = f"""
-
-VII THIRD PARTY SALES       {third_party_sales.iloc[0,3]:>12.0f}{third_party_sales.iloc[0,4]:>12.0f}{third_party_sales.iloc[0,5]:>16.3f}   |{third_party_sales.iloc[0,6]:>8.3f}
-    (INTRA STATE PVT GENERATORS)"""
-    report_content += row_content
-
-    row_content = f"""
-
-VIII TOTAL DEMAND & CONSUMP {gen_total["MorningPeak"]:>12.0f}{gen_total["EveningPeak"]:>12.0f}{gen_total["Energy"]:>16.3f}   |{gen_total["PrevEnergy"]:>8.3f}
-     (WITH PUMPS)"""
-    report_content += row_content
-
-    row_content = f"""
-
-IX  {pump.iloc[0,0]:<24}{pump.iloc[0,3]:>12.0f}{pump.iloc[0,4]:>12.0f}{pump.iloc[0,5]:>16.3f}   |{pump.iloc[0,6]:>8.3f}"""
-    report_content += row_content
-
-    row_content = f"""
-
-
-X   {pump.iloc[1,0]:<24}{pump.iloc[1,3]:>12.0f}{pump.iloc[1,4]:>12.0f}{pump.iloc[1,5]:>16.3f}   |{pump.iloc[1,6]:>8.3f}
-    """
-    report_content += row_content
-
-    row_content = f"""
-
-XI  TG DEMAND(EX-BUS) {(gen_total_wo_pump["InstalledCap"]-TotalInfirm[0][0]):<6.0f}{gen_total_wo_pump["MorningPeak"]:>12.0f}{gen_total_wo_pump["EveningPeak"]:>12.0f}{'':>16}   |{PrevTSDemand[0][0]:>8.0f}
-
-
-       ENERGY (MU)    {'':>6}{'':>12}{'':>12}{gen_total_wo_pump["Energy"]:>16.3f}   |{gen_total_wo_pump["PrevEnergy"]:>8.3f}"""
-    report_content += row_content
-
-    row_content = f"""
-
-
-XII  Load Factor      {'':<6}{'':>12}{'':>12}{load_factor:>16.3f}%  |{PrevLoadFactor[0][0]:>8.3f}%
-"""
-    report_content += row_content
-
-
-    romannumerals=['XIII','XIV','XV','XVI']
-    for i in range(maxcitysolardata.shape[0]):
-        row_content = f"""
-{romannumerals[i]:<5}{maxcitysolardata.iloc[i,1]:<25}{maxcitysolardata.iloc[i,2]:>5.0f} MW    AT   {str(maxcitysolardata.iloc[i,3])[:5]:>8} Hrs
-"""   
-        #print(row_content)
-        report_content += row_content
 
 
 
@@ -802,6 +822,11 @@ def export_to_text(request):
                WHERE (Date BETWEEN %(monthstartday)s AND %(yesterday)s) AND GenStationID=39
                """
 
+    query_Infirm = """
+               SELECT InstalledCap 
+               FROM dailyreport_DemandData
+               WHERE Date=%(yesterday)s AND GenStationID=55
+               """
 
     query_TsdemandFinYearCum = """
                SELECT SUM(Energy) 
@@ -913,6 +938,9 @@ def export_to_text(request):
 
         cursor.execute(query_PrevTSDemand, {'previous_year_day': previous_year_day})
         PrevTSDemand = cursor.fetchall()
+
+        cursor.execute(query_Infirm, {'yesterday': yesterday})
+        TotalInfirm = cursor.fetchall()
 
 #        cursor.execute(query_monthdataTSDemand, {'yesterday': yesterday, 'monthstartday': monthstartday})
 #        tsdemand_monthdata = cursor.fetchall()
@@ -1076,50 +1104,8 @@ No |                            |  {gridfreq_data.iloc[0,0]:.2f}HZ      {gridfre
 ---------------------------------------------------------------------------------
  I  TG GENCO"""
 
-    # Add the data rows to the report content
-    for i in range(hydel.shape[0]):
-      row_content = f"""
-     {hydel.iloc[i,0]:<17}{hydel.iloc[i,2]:>6.0f}{hydel.iloc[i,3]:>12.0f}{hydel.iloc[i,4]:>12.0f}{hydel.iloc[i,5]:>14.3f}    |{hydel.iloc[i,6]:>10.3f}"""
-      report_content += row_content
-
-    row_content = f"""
-       TG HYDEL-->    {round(hydel["InstalledCap"].sum()):>6.0f}{hydel["MorningPeak"].sum():>12.0f}{hydel["EveningPeak"].sum():>12.0f}{hydel["Energy"].sum():>14.3f}    |{hydel["PrevEnergy"].sum():>10.3f}
-        """       
-    report_content += row_content
-
-
-    for i in range(thermal.shape[0]):
-      row_content = f"""
-     {thermal.iloc[i,0]:<17}{thermal.iloc[i,2]:>6.0f}{thermal.iloc[i,3]:>12.0f}{thermal.iloc[i,4]:>12.0f}{thermal.iloc[i,5]:>14.3f}    |{thermal.iloc[i,6]:>10.3f}"""
-      report_content += row_content
-
-    row_content = f"""
-       TG THERMAL-->  {round(thermal["InstalledCap"].sum()):>6.0f}{thermal["MorningPeak"].sum():>12.0f}{thermal["EveningPeak"].sum():>12.0f}{thermal["Energy"].sum():>14.3f}    |{thermal["PrevEnergy"].sum():>10.3f}"""       
-    report_content += row_content
-
-    row_content = f"""
-
-      TG GENCO TOTAL->{round(genco["InstalledCap"].sum()):>6.0f}{genco["MorningPeak"].sum():>12.0f}{genco["EveningPeak"].sum():>12.0f}{genco["Energy"].sum():>14.3f}    |{genco["PrevEnergy"].sum():>10.3f}"""       
-    report_content += row_content
-
-    for i in range(lta.shape[0]):
-      row_content = f"""
-
-     {lta.iloc[i,0]:<17}{lta.iloc[i,2]:>6.0f}{lta.iloc[i,3]:>12.0f}{lta.iloc[i,4]:>12.0f}{lta.iloc[i,5]:>14.3f}    |{lta.iloc[i,6]:>10.3f}"""
-      report_content += row_content
-
-    row_content = f"""
-
-II CENTRAL SECTOR"""       
-    report_content += row_content
-    row_content = f"""
-     {central_sector.iloc[0,0]:<17}{central_sector.iloc[0,2]:>6.0f}{central_sector.iloc[0,3]:>12.0f}{central_sector.iloc[0,4]:>12.0f}{central_sector.iloc[0,5]:>14.3f}    |{central_sector.iloc[0,6]:>10.3f}"""
-    report_content += row_content
-
-    row_content = f"""
-
-III TGShare OF APISGS->{APISGS.iloc[0,2]:>5.0f}{APISGS.iloc[0,3]:>12.0f}{APISGS.iloc[0,4]:>12.0f}{APISGS.iloc[0,5].round(2):>14.3f}    |{APISGS.iloc[0,6]:>10.3f}"""       
-    report_content += row_content
+    report_content += first_page(yesterday,previous_year_day,gridfreq_data,hydel,thermal,TotalInfirm,genco,lta,central_sector,APISGS)
+    romannumerals=['XIII','XIV','XV','XVI']
 
     row_content = f"""
 
@@ -1136,118 +1122,10 @@ No |                            |  {gridfreq_data.iloc[0,0]:.2f}HZ      {gridfre
 (1)    (2)                          (3)          (4)            (5)         (6)
 ----------------------------------------------------------------------------------
 """
-    report_content += row_content
-
-    row_content = f"""
-IV  PRIVATE SECTOR
-
-     a) """   
 
     report_content += row_content
-    row_content = f"""{private.iloc[0,0]:<14}{private.iloc[0,2]:>6.0f}{private.iloc[0,3]:>12.0f}{private.iloc[0,4]:>12.0f}{private.iloc[0,5]:>16.3f}   |{private.iloc[0,6]:>8.3f}"""
-    report_content += row_content
+    report_content += second_page(subindex,alphabets,private,wind,solar,nonconventional,private_total,state_purchases,third_party_purchase,third_party_sales,gen_total,pump,TotalInfirm,PrevTSDemand,gen_total_wo_pump,load_factor,PrevLoadFactor,romannumerals,maxcitysolardata)
 
-    row_content = f"""
-     b) """       
-    report_content += row_content
-    for i in range(wind.shape[0]):
-      row_content = f"""{wind.iloc[i,0]:<14}{wind.iloc[i,2]:>6.1f}{wind.iloc[i,3]:>12.0f}{wind.iloc[i,4]:>12.0f}{wind.iloc[i,5]:>16.3f}   |{wind.iloc[i,6]:>8.3f}"""
-      report_content += row_content
-
-    row_content = f"""
-
-     c) TOTAL SOLAR      {solar["InstalledCap"].sum():>6.2f}"""       
-    report_content += row_content
-    for i in range(solar.shape[0]):
-      row_content = f"""
-       {subindex[i]}){' '*(1-i)} {solar.iloc[i,0][:6]:<11}{solar.iloc[i,2]:>6.2f}{solar.iloc[i,3]:>11.0f}{solar.iloc[i,4]:>12.0f}{solar.iloc[i,5]:>16.3f}   |{solar.iloc[i,6]:>8.3f}"""
-      report_content += row_content
-
-    row_content = f"""
-
-     d) NONCONVENTIONAL   {nonconventional["InstalledCap"].sum():>5.1f}{' ':12}{'':12}"""       
-    report_content += row_content
-    for i in range(nonconventional.shape[0]):
-        if i==0:
-            row_content = f"""
-       {subindex[i]}){'  '}{nonconventional.iloc[i,0]:<18}{nonconventional.iloc[i,3]:>11.0f}{nonconventional.iloc[i,4]:>12.0f}{nonconventional.iloc[i,5]:>16.3f}   |{nonconventional.iloc[i,6]:>8.3f}"""
-            report_content += row_content
-        else:
-            row_content = f"""
-       {subindex[i]}){' '}{nonconventional.iloc[i,0]:<18}{'':>11}{'':>12}{nonconventional.iloc[i,5]:>16.3f}   |{nonconventional.iloc[i,6]:>8.3f}"""
-            report_content += row_content
- 
-    row_content = f"""
-
-     PRIVATE SECTOR TOTAL   {private_total["MorningPeak"].sum():12.0f}{private_total["EveningPeak"].sum():12.0f}{private_total["Energy"].sum():>16.3f}   |{private_total["PrevEnergy"].sum():>8.3f}"""       
-    report_content += row_content
-
-    row_content = f"""
-
-V   STATE PURCHASES   {'':>6}{' ':12}{' ':12}"""       
-    report_content += row_content
-
-    for i in range(state_purchases.shape[0]):
-      row_content = f"""
-     {alphabets[i]}) {state_purchases.iloc[i,0]:<14}{'':>6}{state_purchases.iloc[i,3]:>12.0f}{state_purchases.iloc[i,4]:>12.0f}{state_purchases.iloc[i,5]:>16.3f}   |{state_purchases.iloc[i,6]:>8.3f}"""
-      report_content += row_content
-    row_content = f"""
-
-     STATE PURCHASE TOTAL   {state_purchases["MorningPeak"].sum():12.0f}{state_purchases["EveningPeak"].sum():12.0f}{state_purchases["Energy"].sum():>16.3f}   |{state_purchases["PrevEnergy"].sum():>8.3f}"""
-    report_content += row_content
-    row_content = f"""
-
-VI  THIRD PARTY PURCHASES   {third_party_purchase.iloc[0,3]:>12.0f}{third_party_purchase.iloc[0,4]:>12.0f}{third_party_purchase.iloc[0,5]:>16.3f}   |{third_party_purchase.iloc[0,6]:>8.3f}
-    (CONSUMER PURCHASES)"""
-    report_content += row_content
-
-    row_content = f"""
-
-VII THIRD PARTY SALES       {third_party_sales.iloc[0,3]:>12.0f}{third_party_sales.iloc[0,4]:>12.0f}{third_party_sales.iloc[0,5]:>16.3f}   |{third_party_sales.iloc[0,6]:>8.3f}
-    (INTRA STATE PVT GENERATORS)"""
-    report_content += row_content
-
-    row_content = f"""
-
-VIII TOTAL DEMAND & CONSUMP {gen_total["MorningPeak"]:>12.0f}{gen_total["EveningPeak"]:>12.0f}{gen_total["Energy"]:>16.3f}   |{gen_total["PrevEnergy"]:>8.3f}
-     (WITH PUMPS)"""
-    report_content += row_content
-
-    row_content = f"""
-
-IX  {pump.iloc[0,0]:<24}{pump.iloc[0,3]:>12.0f}{pump.iloc[0,4]:>12.0f}{pump.iloc[0,5]:>16.3f}   |{pump.iloc[0,6]:>8.3f}"""
-    report_content += row_content
-
-    row_content = f"""
-
-
-X   {pump.iloc[1,0]:<24}{pump.iloc[1,3]:>12.0f}{pump.iloc[1,4]:>12.0f}{pump.iloc[1,5]:>16.3f}   |{pump.iloc[1,6]:>8.3f}
-    """
-    report_content += row_content
-
-    row_content = f"""
-
-XI  TG DEMAND(EX-BUS) {round(gen_total_wo_pump["InstalledCap"]):<6.0f}{gen_total_wo_pump["MorningPeak"]:>12.0f}{gen_total_wo_pump["EveningPeak"]:>12.0f}{'':>16}   |{PrevTSDemand[0][0]:>8.0f}
-
-
-       ENERGY (MU)    {'':>6}{'':>12}{'':>12}{gen_total_wo_pump["Energy"]:>16.3f}   |{gen_total_wo_pump["PrevEnergy"]:>8.3f}"""
-    report_content += row_content
-
-    row_content = f"""
-
-
-XII  Load Factor      {'':<6}{'':>12}{'':>12}{load_factor:>16.3f}%  |{PrevLoadFactor[0][0]:>8.3f}%
-"""
-    report_content += row_content
-
-
-    romannumerals=['XIII','XIV','XV','XVI']
-    for i in range(maxcitysolardata.shape[0]):
-        row_content = f"""
-{romannumerals[i]:<5}{maxcitysolardata.iloc[i,1]:<25}{maxcitysolardata.iloc[i,2]:>5.0f} MW    AT   {str(maxcitysolardata.iloc[i,3])[:5]:>8} Hrs
-"""   
-        #print(row_content)
-        report_content += row_content
 
 
 
