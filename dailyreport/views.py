@@ -369,7 +369,7 @@ X   {pump.iloc[1,0]:<24}{pump.iloc[1,3]:>12.0f}{pump.iloc[1,4]:>12.0f}{pump.iloc
 
     row_content = f"""
 
-XI  TG DEMAND(EX-BUS) {(gen_total_wo_pump["InstalledCap"]-TotalInfirm[0][0]):<6.1f}{gen_total_wo_pump["MorningPeak"]:>12.0f}{gen_total_wo_pump["EveningPeak"]:>12.0f}{'':>16}   |{PrevTSDemand[0][0]:>8.0f}
+XI  TG DEMAND(EX-BUS) {(gen_total_wo_pump["InstalledCap"]-TotalInfirm[0][0]):<6.0f}{gen_total_wo_pump["MorningPeak"]:>12.0f}{gen_total_wo_pump["EveningPeak"]:>12.0f}{'':>16}   |{PrevTSDemand[0][0]:>8.0f}
 
 
        ENERGY (MU)    {'':>6}{'':>12}{'':>12}{gen_total_wo_pump["Energy"]:>16.3f}   |{gen_total_wo_pump["PrevEnergy"]:>8.3f}"""
@@ -1104,7 +1104,7 @@ No |                            |  {gridfreq_data.iloc[0,0]:.2f}HZ      {gridfre
 ---------------------------------------------------------------------------------
  I  TG GENCO"""
 
-    report_content += first_page(yesterday,previous_year_day,gridfreq_data,hydel,thermal,TotalInfirm,genco,lta,central_sector,APISGS)
+    report_content += first_page(gridfreq_data,hydel,thermal,TotalInfirm,genco,lta,central_sector,APISGS)
     romannumerals=['XIII','XIV','XV','XVI']
 
     row_content = f"""
