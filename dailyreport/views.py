@@ -276,7 +276,7 @@ III TGShare OF APISGS->{APISGS.iloc[0,2]:>5.0f}{APISGS.iloc[0,3]:>12.0f}{APISGS.
 
 
 
-def second_page(subindex,alphabets,private,wind,solar,nonconventional,private_total,state_purchases,third_party_purchase,third_party_sales,gen_total,pump,TotalInfirm,PrevTSDemand,gen_total_wo_pump,load_factor,PrevLoadFactor,romannumerals,maxcitysolardata):
+def second_page(subindex,alphabets,private,wind,solar,nonconventional,private_total,state_purchases,banking_power,third_party_purchase,third_party_sales,gen_total,pump,TotalInfirm,PrevTSDemand,gen_total_wo_pump,load_factor,PrevLoadFactor,romannumerals,maxcitysolardata):
     # Create the report content as a string
     report_content = f""""""
     row_content = f"""
@@ -337,39 +337,57 @@ V   STATE PURCHASES   {'':>6}{' ':12}{' ':12}"""
 
      STATE PURCHASE TOTAL   {state_purchases["MorningPeak"].sum():12.0f}{state_purchases["EveningPeak"].sum():12.0f}{state_purchases["Energy"].sum():>16.3f}   |{state_purchases["PrevEnergy"].sum():>8.3f}"""
     report_content += row_content
+    
+    
+    row_content = f"""
+    
+VI   BANKING POWER   {'':>6}{' ':12}{' ':12}"""       
+    report_content += row_content 
+
+    for i in range(banking_power.shape[0]):
+      row_content = f"""
+     {alphabets[i]}) {banking_power.iloc[i,0]:<22}{banking_power.iloc[i,3]:>10.0f}{banking_power.iloc[i,4]:>12.0f}{banking_power.iloc[i,5]:>16.3f}   |{banking_power.iloc[i,6]:>8.3f}"""
+      report_content += row_content
+    
     row_content = f"""
 
-VI  THIRD PARTY PURCHASES   {third_party_purchase.iloc[0,3]:>12.0f}{third_party_purchase.iloc[0,4]:>12.0f}{third_party_purchase.iloc[0,5]:>16.3f}   |{third_party_purchase.iloc[0,6]:>8.3f}
+     NET BANKING POWER      {banking_power["MorningPeak"].sum():12.0f}{banking_power["EveningPeak"].sum():12.0f}{banking_power["Energy"].sum():>16.3f}   |{banking_power["PrevEnergy"].sum():>8.3f}"""
+    report_content += row_content
+    
+    
+    row_content = f"""
+
+VII  THIRD PARTY PURCHASES  {third_party_purchase.iloc[0,3]:>12.0f}{third_party_purchase.iloc[0,4]:>12.0f}{third_party_purchase.iloc[0,5]:>16.3f}   |{third_party_purchase.iloc[0,6]:>8.3f}
     (CONSUMER PURCHASES)"""
     report_content += row_content
 
     row_content = f"""
 
-VII THIRD PARTY SALES       {third_party_sales.iloc[0,3]:>12.0f}{third_party_sales.iloc[0,4]:>12.0f}{third_party_sales.iloc[0,5]:>16.3f}   |{third_party_sales.iloc[0,6]:>8.3f}
+VIII THIRD PARTY SALES      {third_party_sales.iloc[0,3]:>12.0f}{third_party_sales.iloc[0,4]:>12.0f}{third_party_sales.iloc[0,5]:>16.3f}   |{third_party_sales.iloc[0,6]:>8.3f}
     (INTRA STATE PVT GENERATORS)"""
     report_content += row_content
 
     row_content = f"""
 
-VIII TOTAL DEMAND & CONSUMP {gen_total["MorningPeak"]:>12.0f}{gen_total["EveningPeak"]:>12.0f}{gen_total["Energy"]:>16.3f}   |{gen_total["PrevEnergy"]:>8.3f}
+IX   TOTAL DEMAND & CONSUMP {gen_total["MorningPeak"]:>12.0f}{gen_total["EveningPeak"]:>12.0f}{gen_total["Energy"]:>16.3f}   |{gen_total["PrevEnergy"]:>8.3f}
      (WITH PUMPS)"""
     report_content += row_content
 
     row_content = f"""
 
-IX  {pump.iloc[0,0]:<24}{pump.iloc[0,3]:>12.0f}{pump.iloc[0,4]:>12.0f}{pump.iloc[0,5]:>16.3f}   |{pump.iloc[0,6]:>8.3f}"""
+X   {pump.iloc[0,0]:<24}{pump.iloc[0,3]:>12.0f}{pump.iloc[0,4]:>12.0f}{pump.iloc[0,5]:>16.3f}   |{pump.iloc[0,6]:>8.3f}"""
     report_content += row_content
 
     row_content = f"""
 
 
-X   {pump.iloc[1,0]:<24}{pump.iloc[1,3]:>12.0f}{pump.iloc[1,4]:>12.0f}{pump.iloc[1,5]:>16.3f}   |{pump.iloc[1,6]:>8.3f}
+XI  {pump.iloc[1,0]:<24}{pump.iloc[1,3]:>12.0f}{pump.iloc[1,4]:>12.0f}{pump.iloc[1,5]:>16.3f}   |{pump.iloc[1,6]:>8.3f}
     """
     report_content += row_content
 
     row_content = f"""
 
-XI  TG DEMAND(EX-BUS) {(gen_total_wo_pump["InstalledCap"]-TotalInfirm[0][0]):<6.0f}{gen_total_wo_pump["MorningPeak"]:>12.0f}{gen_total_wo_pump["EveningPeak"]:>12.0f}{'':>16}   |{PrevTSDemand[0][0]:>8.0f}
+XII TG DEMAND(EX-BUS) {(gen_total_wo_pump["InstalledCap"]-TotalInfirm[0][0]):<6.0f}{gen_total_wo_pump["MorningPeak"]:>12.0f}{gen_total_wo_pump["EveningPeak"]:>12.0f}{'':>16}   |{PrevTSDemand[0][0]:>8.0f}
 
 
        ENERGY (MU)    {'':>6}{'':>12}{'':>12}{gen_total_wo_pump["Energy"]:>16.3f}   |{gen_total_wo_pump["PrevEnergy"]:>8.3f}"""
@@ -378,12 +396,12 @@ XI  TG DEMAND(EX-BUS) {(gen_total_wo_pump["InstalledCap"]-TotalInfirm[0][0]):<6.
     row_content = f"""
 
 
-XII  Load Factor      {'':<6}{'':>12}{'':>12}{load_factor:>16.3f}%  |{PrevLoadFactor[0][0]:>8.3f}%
+XIII Load Factor      {'':<6}{'':>12}{'':>12}{load_factor:>16.3f}%  |{PrevLoadFactor[0][0]:>8.3f}%
 """
     report_content += row_content
 
 
-    romannumerals=['XIII','XIV','XV','XVI']
+    romannumerals=['XIV','XV','XVI','XVII']
     for i in range(maxcitysolardata.shape[0]):
         row_content = f"""
 {romannumerals[i]:<5}{maxcitysolardata.iloc[i,1]:<25}{maxcitysolardata.iloc[i,2]:>5.0f} MW    AT   {str(maxcitysolardata.iloc[i,3])[:5]:>8} Hrs
@@ -553,12 +571,14 @@ def export_to_text_fir(request):
         private_total=pd.concat([private,wind,solar,nonconventional],axis=0)
 
         state_purchases=gen_data[gen_data["GenType"] == 'State Purchases']
-
+        #print(gen_data)
+        banking_power=gen_data[gen_data["GenType"] == 'BANKING POWER']
+        #print(banking_power)
         third_party_purchase=gen_data[gen_data["GenType"] == 'Third Party Purchases']
 
         third_party_sales=gen_data[gen_data["GenType"] == 'Third Party Sales']
 
-        gen_total=pd.concat([genco,central_sector,lta,APISGS,private_total,state_purchases,third_party_purchase,third_party_sales],axis=0)
+        gen_total=pd.concat([genco,central_sector,lta,APISGS,private_total,state_purchases,banking_power,third_party_purchase,third_party_sales],axis=0)
         gen_total=gen_total[['InstalledCap','MorningPeak','EveningPeak','Energy','PrevEnergy']].sum()
 
         pump=gen_data[gen_data["GenType"] == 'Pump']
@@ -620,7 +640,7 @@ No |                            |  {gridfreq_data.iloc[0,0]:.2f}HZ      {gridfre
 ----------------------------------------------------------------------------------
 """
     report_content += row_content
-    report_content += second_page(subindex,alphabets,private,wind,solar,nonconventional,private_total,state_purchases,third_party_purchase,third_party_sales,gen_total,pump,TotalInfirm,PrevTSDemand,gen_total_wo_pump,load_factor,PrevLoadFactor,romannumerals,maxcitysolardata)
+    report_content += second_page(subindex,alphabets,private,wind,solar,nonconventional,private_total,state_purchases,banking_power,third_party_purchase,third_party_sales,gen_total,pump,TotalInfirm,PrevTSDemand,gen_total_wo_pump,load_factor,PrevLoadFactor,romannumerals,maxcitysolardata)
 
 
 
@@ -671,7 +691,7 @@ No |                            |  {gridfreq_data.iloc[0,0]:.2f}HZ      {gridfre
     row_content = f"""  ===============================================================================
 """
     report_content += row_content
-    if gen_total_wo_pump["MorningPeak"]>gen_total_wo_pump["EveningPeak"]:
+    if gen_total["MorningPeak"]>gen_total["EveningPeak"]:
         row_content=f"""
         
         
@@ -688,6 +708,7 @@ CGS- {central_sector.loc[central_sector['GenStationID']==21].MorningPeak.values[
 TG Share of APISGS- {APISGS.loc[APISGS['GenStationID']==22].MorningPeak.values[0]:.0f} MW, {APISGS.loc[APISGS['GenStationID']==22].Energy.values[0]:.3f} MU;
 Pvt Sector- {private_total["MorningPeak"].sum():.0f} MW, {private_total["Energy"].sum():.3f} MU;
 State Purchases- {state_purchases["MorningPeak"].sum():.0f} MW, {state_purchases["Energy"].sum():.3f} MU;
+Banking Power- {banking_power["MorningPeak"].sum():.0f} MW, {banking_power["Energy"].sum():.3f} MU;
 Third Party Purchases- {third_party_purchase["MorningPeak"].sum():.0f} MW, {third_party_purchase["Energy"].sum():.3f} MU;
 Third Party Sales- {third_party_sales["MorningPeak"].sum():.0f} MW, {third_party_sales["Energy"].sum():.3f} MU;
 SSLM PUMP Consumption- {pump.iloc[0,3]:.0f} MW, {pump.iloc[0,5]:.3f} MU;
@@ -725,6 +746,7 @@ CGS- {central_sector.loc[central_sector['GenStationID']==21].EveningPeak.values[
 TG Share of APISGS- {APISGS.loc[APISGS['GenStationID']==22].EveningPeak.values[0]:.0f} MW, {APISGS.loc[APISGS['GenStationID']==22].Energy.values[0]:.3f} MU;
 Pvt Sector-{private_total["EveningPeak"].sum():.0f} MW, {private_total["Energy"].sum():.3f} MU;
 State Purchases-{state_purchases["EveningPeak"].sum():.0f} MW, {state_purchases["Energy"].sum():.3f} MU;
+Banking Power- {banking_power["EveningPeak"].sum():.0f} MW, {banking_power["Energy"].sum():.3f} MU;
 Third Party Purchases-{third_party_purchase["EveningPeak"].sum():.0f} MW, {third_party_purchase["Energy"].sum():.3f} MU;
 Third Party Sales-{third_party_sales["EveningPeak"].sum():.0f} MW, {third_party_sales["Energy"].sum():.3f} MU;
 SSLM PUMP Consumption- {pump.iloc[0,4]:.0f} MW, {pump.iloc[0,5]:.3f} MU;
@@ -1059,11 +1081,13 @@ def export_to_text(request):
 
         state_purchases=gen_data[gen_data["GenType"] == 'State Purchases']
 
+        banking_power=gen_data[gen_data["GenType"] == 'BANKING POWER']
+
         third_party_purchase=gen_data[gen_data["GenType"] == 'Third Party Purchases']
 
         third_party_sales=gen_data[gen_data["GenType"] == 'Third Party Sales']
 
-        gen_total=pd.concat([genco,central_sector,lta,APISGS,private_total,state_purchases,third_party_purchase,third_party_sales],axis=0)
+        gen_total=pd.concat([genco,central_sector,lta,APISGS,private_total,state_purchases,banking_power,third_party_purchase,third_party_sales],axis=0)
         gen_total=gen_total[['InstalledCap','MorningPeak','EveningPeak','Energy','PrevEnergy']].sum()
 
         pump=gen_data[gen_data["GenType"] == 'Pump']
@@ -1124,7 +1148,7 @@ No |                            |  {gridfreq_data.iloc[0,0]:.2f}HZ      {gridfre
 """
 
     report_content += row_content
-    report_content += second_page(subindex,alphabets,private,wind,solar,nonconventional,private_total,state_purchases,third_party_purchase,third_party_sales,gen_total,pump,TotalInfirm,PrevTSDemand,gen_total_wo_pump,load_factor,PrevLoadFactor,romannumerals,maxcitysolardata)
+    report_content += second_page(subindex,alphabets,private,wind,solar,nonconventional,private_total,state_purchases,banking_power,third_party_purchase,third_party_sales,gen_total,pump,TotalInfirm,PrevTSDemand,gen_total_wo_pump,load_factor,PrevLoadFactor,romannumerals,maxcitysolardata)
 
 
 
@@ -1176,9 +1200,10 @@ TOTAL SCHEDULES & DRAWALS FROM CENTRAL NETWORK INCLUDING CENTRAL GENERATING STAT
     {'TG HYDEL GEN .........':<25}{hydel["Energy"].sum():>8.3f}{'':<15}{'TG SHARE of APISGS..':<25}{APISGS.iloc[0,5]:>8.3f}
     {'TG THERMAL GEN........':<25}{thermal["Energy"].sum():>8.3f}{'':<15}{'PRIVATE SECTOR......':<25}{private_total["Energy"].sum():>8.3f}
     {'TG GENCO TOTAL........':<25}{genco["Energy"].sum():>8.3f}{'':<15}{'STATE PURCHASES.....':<25}{state_purchases["Energy"].sum():>8.3f}
-    {'SINGARENI... .........':<25}{lta.loc[18,'Energy']:>8.3f}{'':<15}{'3RD PARTY PURC+SALES':<25}{(third_party_purchase.iloc[0,5]+third_party_sales.iloc[0,5]):>8.3f}
-    {'CHATTISGARH SPDCL.....':<25}{lta.loc[20,'Energy']:>8.3f}{'':<15}{'SSLB PUMP CONSUMP...':<25}{pump.iloc[0,5]:>8.3f}
-    {'CGS UTIL..............':<25}{central_sector.iloc[0,5]:>8.3f}{'':<15}{'NSR PUMP CONSUMP....':<25}{pump.iloc[1,5]:>8.3f}
+    {'SINGARENI... .........':<25}{lta.loc[18,'Energy']:>8.3f}{'':<15}{'BANKING POWER.......':<25}{banking_power["Energy"].sum():>8.3f}
+    {'CHATTISGARH SPDCL.....':<25}{lta.loc[20,'Energy']:>8.3f}{'':<15}{'3RD PARTY PURC+SALES':<25}{(third_party_purchase.iloc[0,5]+third_party_sales.iloc[0,5]):>8.3f}
+    {'CGS UTIL..............':<25}{central_sector.iloc[0,5]:>8.3f}{'':<15}{'SSLB PUMP CONSUMP...':<25}{pump.iloc[0,5]:>8.3f}
+    {'':<25}{'':>8}{'NSR PUMP CONSUMP....':<25}{pump.iloc[1,5]:>8.3f}
     {'':<25}{'':>8}{'':<15}{'TOTAL':>25}{gen_total_wo_pump["Energy"]:>8.3f}
     ---------------------------------------------------------------------------------
                                                             THIS YEAR       LAST YEAR
@@ -1393,8 +1418,9 @@ def export_dailymu_to_text(request):
         report_apisgs=monthlyenergyreport(monthgendata,['APISGS'])
         report_solar=monthlyenergyreport(monthgendata,['Private_solar'])
         report_nonconventional=monthlyenergyreport(monthgendata,['Private_Nonconventional'])
-        report_statepurchases=monthlyenergyreport(monthgendata,['State Purchases','Third Party Purchases','Third Party Sales','Pump'])
-
+        report_statepurchases=monthlyenergyreport(monthgendata,['State Purchases'])
+        report_banking=monthlyenergyreport(monthgendata,['BANKING POWER'])
+        report_thirdpartypurchases=monthlyenergyreport(monthgendata,['Third Party Purchases','Third Party Sales','Pump'])
         monthdata_private=monthgendata[monthgendata["GenType"].str.contains("Private") & ~(monthgendata["GenType"].isin(['Private_solar','Private_Nonconventional']))]
         for GenStationID in monthdata_private['GenStationID'].unique():
             df_station=monthdata_private.loc[monthdata_private['GenStationID']==GenStationID]
@@ -1577,9 +1603,21 @@ def export_dailymu_to_text(request):
 """
     spacer=[24,5]+[6]*yesterday.day+[9,16]
     report_statepurchases['InstalledCap']=''
+
     report_content += f"""
 STATE PURCHASES:
 {addcontent(report_statepurchases)}"""
+
+    report_banking['InstalledCap']=''
+
+    report_content += f"""
+BANKING POWER:
+{addcontent(report_banking)}"""
+
+    report_thirdpartypurchases['InstalledCap']=''
+
+    report_content += f"""
+{addcontent(report_thirdpartypurchases)}"""
 
 
     report_content += f"""{'':30}{'      '*(yesterday.day):>6}{'':8}{'Max':>9}
